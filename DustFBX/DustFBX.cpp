@@ -442,15 +442,15 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 		FbxGeometryElementMaterial* lMaterialElement = lpMesh->CreateElementMaterial();
 		lMaterialElement->SetName(lMaterialName.Buffer() );
 		lMaterialElement->SetMappingMode(FbxGeometryElement::eAllSame);
-	
-	/*
+		lMaterialElement->SetReferenceMode(FbxLayerElement::eDirect);
+		
 		FbxLayer* lpLayer = lpMesh->GetLayer( 0 );
         FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(lpMesh, lMaterialName.Buffer());
         lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
-        lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eIndexToDirect);
+		lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eDirect);
         lpLayer->SetMaterials(lLayerElementMaterial);
         lLayerElementMaterial->GetIndexArray().Add(0);
-		*/
+		
 		FbxSurfaceLambert* lpMaterial = lpMeshNode->GetSrcObject<FbxSurfaceLambert>(0);
 
 		FbxDouble3 lDC(1,1,1);
@@ -463,7 +463,7 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 		lpTexture->SetTextureUse(FbxTexture::eStandard);
 		lpTexture->SetMappingType(FbxTexture::eUV);
 		lpTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-		//lpTexture->UVSet.Set(FbxString("DiffuseUV"));
+		lpTexture->UVSet.Set(FbxString("DiffuseUV"));
         lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
     }
 }
@@ -522,13 +522,13 @@ void dust2FBX( FbxScene* apScene, char* apFileName )
 	for(int s = 0; s < lSectorsCount; s++ )
 		if ( lpSectors[ s ].meshesCount > 0 )
 		{
-			//if ( s > 8000 )
+			if ( s > 8000 )
 			{
 			createSectorNode( apScene, lpSectors + s );
 			done++;
 			}
-			//if ( done == 1 )
-			//	break;
+			if ( done == 1 )
+				break;
 		}
 
 	delete lpFileBuffer;
