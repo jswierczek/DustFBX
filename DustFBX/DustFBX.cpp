@@ -25,16 +25,35 @@ void CreateTexture(FbxScene* pScene, FbxMesh* pMesh)
             FbxDouble3 lBlack(0.0, 0.0, 0.0);
             FbxDouble3 lRed(1.0, 0.0, 0.0);
             FbxDouble3 lDiffuseColor(0.75, 0.75, 0.0);
+
+			           
+			FbxLayer* lLayer = pMesh->GetLayer(0);     
+
+            // Create a layer element material to handle proper mapping.
+            FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(pMesh, lMaterialName.Buffer());
+
+            // This allows us to control where the materials are mapped.  Using eAllSame
+            // means that all faces/polygons of the mesh will be assigned the same material.
+            lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
+            lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eIndexToDirect);
+            
+            // Save the material on the layer
+            lLayer->SetMaterials(lLayerElementMaterial);
+
+            // Add an index to the lLayerElementMaterial.  Since we have only one, and are using eAllSame mapping mode,
+            // we only need to add one.
+            lLayerElementMaterial->GetIndexArray().Add(0);
+
             lMaterial = FbxSurfaceLambert::Create(pScene, lMaterialName.Buffer());
 
             // Generate primary and secondary colors.
-            //lMaterial->Emissive           .Set(lBlack);
-           // lMaterial->Ambient            .Set(lRed);
-            //lMaterial->AmbientFactor      .Set(1.);
+            lMaterial->Emissive           .Set(lBlack);
+            lMaterial->Ambient            .Set(lRed);
+            lMaterial->AmbientFactor      .Set(1.);
             // Add texture for diffuse channel
             lMaterial->Diffuse           .Set(lDiffuseColor);
-            //lMaterial->DiffuseFactor     .Set(1.);
-            //lMaterial->TransparencyFactor.Set(0.4);
+            lMaterial->DiffuseFactor     .Set(1.);
+            lMaterial->TransparencyFactor.Set(0.4);
             lMaterial->ShadingModel      .Set(lShadingName);
             //lMaterial->Shininess         .Set(0.5);
             //lMaterial->Specular          .Set(lBlack);
@@ -47,14 +66,15 @@ void CreateTexture(FbxScene* pScene, FbxMesh* pMesh)
     FbxFileTexture* lTexture = FbxFileTexture::Create(pScene,"myCube");
 
     // Set texture properties.
-    lTexture->SetFileName("myCube.JPG"); // Resource file is in current directory.
+    lTexture->SetFileName("mycube.jpg"); // Resource file is in current directory.
 	lTexture->SetTextureUse(FbxTexture::eStandard);
     lTexture->SetMappingType(FbxTexture::eUV);
 	lTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-    //lTexture->SetSwapUV(false);
-    //lTexture->SetTranslation(0.0, 0.0);
-    //lTexture->SetScale(1.0, 1.0);
-    //lTexture->SetRotation(0.0, 0.0);
+    lTexture->SetSwapUV(false);
+    lTexture->SetTranslation(0.0, 0.0);
+    lTexture->SetScale(1.0, 1.0);
+    lTexture->SetRotation(0.0, 0.0);
+	lTexture->UVSet.Set(FbxString("DiffuseUV"));
 
     // don't forget to connect the texture to the corresponding property of the material
     if (lMaterial)
@@ -231,9 +251,9 @@ FbxNode* CreateCubeWithTexture(FbxScene* pScene, char* pName)
         16, 17, 18, 19,
         20, 21, 22, 23 };
 
-	FbxGeometryElementMaterial *lm = lMesh->CreateElementMaterial();
-	lm->SetName("myCube");
-	lm->SetMappingMode( FbxLayerElement::eAllSame );
+	//FbxGeometryElementMaterial *lm = lMesh->CreateElementMaterial();
+	//lm->SetName("myCube");
+	//lm->SetMappingMode( FbxLayerElement::eAllSame );
 
     // Create UV for Diffuse channel
     FbxGeometryElementUV* lUVDiffuseElement = lMesh->CreateElementUV( "DiffuseUV");
@@ -256,10 +276,10 @@ FbxNode* CreateCubeWithTexture(FbxScene* pScene, char* pName)
 	//lUVAmbientElement->SetMappingMode(FbxGeometryElement::eByPolygonVertex);
 	//lUVAmbientElement->SetReferenceMode(FbxGeometryElement::eIndexToDirect);
 
-    lVectors0.Set(0, 0);
-    lVectors1.Set(1, 0);
-    lVectors2.Set(0, 0.418586879968643);
-    lVectors3.Set(1, 0.418586879968643);
+//    lVectors0.Set(0, 0);
+ //   lVectors1.Set(1, 0);
+  //  lVectors2.Set(0, 0.418586879968643);
+   /// lVectors3.Set(1, 0.418586879968643);
 
     //lUVAmbientElement->GetDirectArray().Add(lVectors0);
     //lUVAmbientElement->GetDirectArray().Add(lVectors1);
@@ -272,10 +292,10 @@ FbxNode* CreateCubeWithTexture(FbxScene* pScene, char* pName)
 	//lUVEmissiveElement->SetMappingMode(FbxGeometryElement::eByPolygonVertex);
 	//lUVEmissiveElement->SetReferenceMode(FbxGeometryElement::eIndexToDirect);
 
-    lVectors0.Set(0.2343, 0);
-    lVectors1.Set(1, 0.555);
-    lVectors2.Set(0.333, 0.999);
-    lVectors3.Set(0.555, 0.666);
+ //   lVectors0.Set(0.2343, 0);
+ //   lVectors1.Set(1, 0.555);
+ //   lVectors2.Set(0.333, 0.999);
+ //   lVectors3.Set(0.555, 0.666);
 
     //lUVEmissiveElement->GetDirectArray().Add(lVectors0);
     //lUVEmissiveElement->GetDirectArray().Add(lVectors1);
@@ -458,14 +478,28 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 		lpMaterial->Diffuse.Set( lDC );
 		lpMaterial->ShadingModel.Set(lShadingName);
         lpMeshNode->AddMaterial(lpMaterial);
+            // Generate primary and secondary colors.
+            lpMaterial->Emissive           .Set( FbxDouble3(0,0,0) );
+            lpMaterial->Ambient            .Set(FbxDouble3(0,0,0));
+            lpMaterial->AmbientFactor      .Set(1.);
+            // Add texture for diffuse channel
+            lpMaterial->Diffuse           .Set(FbxDouble3(1,1,1));
+            lpMaterial->DiffuseFactor     .Set(1.);
+            //lpMaterial->TransparencyFactor.Set(0.4);
+            lpMaterial->ShadingModel      .Set(lShadingName);
+
 		FbxFileTexture* lpTexture = FbxFileTexture::Create(apScene,lMaterialName.Buffer());
 		lpTexture->SetFileName(lMaterialName.Buffer()); 
 		lpTexture->SetTextureUse(FbxTexture::eStandard);
 		lpTexture->SetMappingType(FbxTexture::eUV);
 		lpTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
 		lpTexture->UVSet.Set(FbxString("DiffuseUV"));
-        lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
-    }
+		lpTexture->SetTranslation(0.0, 0.0);
+		lpTexture->SetScale(1.0, 1.0);
+		lpTexture->SetRotation(0.0, 0.0);
+		lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
+
+	}
 }
 
 void dust2FBX( FbxScene* apScene, char* apFileName )
@@ -522,27 +556,128 @@ void dust2FBX( FbxScene* apScene, char* apFileName )
 	for(int s = 0; s < lSectorsCount; s++ )
 		if ( lpSectors[ s ].meshesCount > 0 )
 		{
-			if ( s > 8000 )
+			//if ( s > 8000 )
 			{
 			createSectorNode( apScene, lpSectors + s );
 			done++;
 			}
-			if ( done == 1 )
-				break;
+			//if ( done == 1 )
+			//	break;
 		}
 
 	delete lpFileBuffer;
 }
 
+#ifdef IOS_REF
+	#undef  IOS_REF
+	#define IOS_REF (*(pManager->GetIOSettings()))
+#endif
+
+void InitializeSdkObjects(FbxManager*& pManager, FbxScene*& pScene)
+{
+    //The first thing to do is to create the FBX Manager which is the object allocator for almost all the classes in the SDK
+    pManager = FbxManager::Create();
+    if( !pManager )
+    {
+        FBXSDK_printf("Error: Unable to create FBX Manager!\n");
+        exit(1);
+    }
+	else FBXSDK_printf("Autodesk FBX SDK version %s\n", pManager->GetVersion());
+
+	//Create an IOSettings object. This object holds all import/export settings.
+	FbxIOSettings* ios = FbxIOSettings::Create(pManager, IOSROOT);
+	pManager->SetIOSettings(ios);
+
+	//Load plugins from the executable directory (optional)
+	FbxString lPath = FbxGetApplicationDirectory();
+	pManager->LoadPluginsDirectory(lPath.Buffer());
+
+    //Create an FBX scene. This object holds most objects imported/exported from/to files.
+    pScene = FbxScene::Create(pManager, "My Scene");
+	if( !pScene )
+    {
+        FBXSDK_printf("Error: Unable to create FBX scene!\n");
+        exit(1);
+    }
+}
+
+void DestroySdkObjects(FbxManager* pManager, bool pExitStatus)
+{
+    //Delete the FBX Manager. All the objects that have been allocated using the FBX Manager and that haven't been explicitly destroyed are also automatically destroyed.
+    if( pManager ) pManager->Destroy();
+	if( pExitStatus ) FBXSDK_printf("Program Success!\n");
+}
+
+bool SaveScene(FbxManager* pManager, FbxDocument* pScene, const char* pFilename, int pFileFormat, bool pEmbedMedia)
+{
+    int lMajor, lMinor, lRevision;
+    bool lStatus = true;
+
+    // Create an exporter.
+    FbxExporter* lExporter = FbxExporter::Create(pManager, "");
+
+    if( pFileFormat < 0 || pFileFormat >= pManager->GetIOPluginRegistry()->GetWriterFormatCount() )
+    {
+        // Write in fall back format in less no ASCII format found
+        pFileFormat = pManager->GetIOPluginRegistry()->GetNativeWriterFormat();
+
+        //Try to export in ASCII if possible
+        int lFormatIndex, lFormatCount = pManager->GetIOPluginRegistry()->GetWriterFormatCount();
+
+        for (lFormatIndex=0; lFormatIndex<lFormatCount; lFormatIndex++)
+        {
+            if (pManager->GetIOPluginRegistry()->WriterIsFBX(lFormatIndex))
+            {
+                FbxString lDesc =pManager->GetIOPluginRegistry()->GetWriterFormatDescription(lFormatIndex);
+                const char *lASCII = "ascii";
+                if (lDesc.Find(lASCII)>=0)
+                {
+                    pFileFormat = lFormatIndex;
+                    break;
+                }
+            }
+        } 
+    }
+
+    // Set the export states. By default, the export states are always set to 
+    // true except for the option eEXPORT_TEXTURE_AS_EMBEDDED. The code below 
+    // shows how to change these states.
+    IOS_REF.SetBoolProp(EXP_FBX_MATERIAL,        true);
+    IOS_REF.SetBoolProp(EXP_FBX_TEXTURE,         true);
+    IOS_REF.SetBoolProp(EXP_FBX_EMBEDDED,        pEmbedMedia);
+    IOS_REF.SetBoolProp(EXP_FBX_SHAPE,           true);
+    IOS_REF.SetBoolProp(EXP_FBX_GOBO,            true);
+    IOS_REF.SetBoolProp(EXP_FBX_ANIMATION,       true);
+    IOS_REF.SetBoolProp(EXP_FBX_GLOBAL_SETTINGS, true);
+
+    // Initialize the exporter by providing a filename.
+    if(lExporter->Initialize(pFilename, pFileFormat, pManager->GetIOSettings()) == false)
+    {
+        FBXSDK_printf("Call to FbxExporter::Initialize() failed.\n");
+        FBXSDK_printf("Error returned: %s\n\n", lExporter->GetStatus().GetErrorString());
+        return false;
+    }
+
+    FbxManager::GetFileFormatVersion(lMajor, lMinor, lRevision);
+    FBXSDK_printf("FBX file format version %d.%d.%d\n\n", lMajor, lMinor, lRevision);
+
+    // Export the scene.
+    lStatus = lExporter->Export(pScene); 
+
+    // Destroy the exporter.
+    lExporter->Destroy();
+    return lStatus;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	// Create the FBX SDK manager
-	FbxManager* lSdkManager = FbxManager::Create();
+	//FbxManager* lSdkManager = FbxManager::Create();
 
 	// Create an IOSettings object.
-	FbxIOSettings * ios = FbxIOSettings::Create(lSdkManager, IOSROOT );
-	lSdkManager->SetIOSettings(ios);
-
+	//FbxIOSettings * ios = FbxIOSettings::Create(lSdkManager, IOSROOT );
+	//lSdkManager->SetIOSettings(ios);
+	/*
 	// Set the FbxIOSettings EXP_FBX_EMBEDDED property to true.
 	(*(lSdkManager->GetIOSettings())).SetBoolProp(EXP_FBX_EMBEDDED, true);
 
@@ -564,18 +699,31 @@ int _tmain(int argc, _TCHAR* argv[])
 		printf("Call to FbxExporter::Initialize() failed.\n");
 		return false;
 	}
+	*/
+
+    FbxManager* lSdkManager = NULL;
+    FbxScene* lScene = NULL;
+    char* lSampleFileName = NULL;
+    bool lResult = false;
+
+    // Prepare the FBX SDK.
+    InitializeSdkObjects(lSdkManager, lScene);
 
 	// Create a new scene so it can be populated by the imported file.
-	FbxScene* lpScene = FbxScene::Create(lSdkManager, "Anasta1" );
+	//FbxScene* lpScene = FbxScene::Create(lSdkManager, "Anasta1" );
 
-	//createScene( lpScene );
-	dust2FBX( lpScene, "Anasta1" );
+	//createScene( lScene );
+	dust2FBX( lScene, "Anasta1" );
+	SaveScene( lSdkManager, lScene, "Anasta1.fbx",-1,false);
 
 	// Export the scene to the file.
-	lExporter->Export(lpScene);
+	//lExporter->Export(lpScene);
 
 	// Destroy the exporter.
-	lExporter->Destroy();
+	//lExporter->Destroy();
+
+    // Destroy all objects created by the FBX SDK.
+    DestroySdkObjects(lSdkManager, lResult);
 
 	return 0;
 }
