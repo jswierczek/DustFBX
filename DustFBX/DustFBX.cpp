@@ -2,348 +2,7 @@
 //
 
 #include "stdafx.h"
-#include <fbxsdk.h>
-#include <fbxsdk/fileio/fbxiosettings.h>
-
-
-// Create texture for cube.
-void CreateTexture(FbxScene* pScene, FbxMesh* pMesh)
-{
-    // A texture need to be connected to a property on the material,
-    // so let's use the material (if it exists) or create a new one
-    FbxSurfaceLambert* lMaterial = NULL;
-
-    //get the node of mesh, add material for it.
-    FbxNode* lNode = pMesh->GetNode();
-  //  if(lNode)
-    {
-        lMaterial = lNode->GetSrcObject<FbxSurfaceLambert>(0);
-        if (lMaterial == NULL)
-        {
-            FbxString lMaterialName = "myCube";
-            FbxString lShadingName  = "myCube";
-            FbxDouble3 lBlack(0.0, 0.0, 0.0);
-            FbxDouble3 lRed(1.0, 0.0, 0.0);
-            FbxDouble3 lDiffuseColor(0.75, 0.75, 0.0);
-
-			           
-			FbxLayer* lLayer = pMesh->GetLayer(0);     
-
-            // Create a layer element material to handle proper mapping.
-            FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(pMesh, lMaterialName.Buffer());
-
-            // This allows us to control where the materials are mapped.  Using eAllSame
-            // means that all faces/polygons of the mesh will be assigned the same material.
-            lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
-            lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eIndexToDirect);
-            
-            // Save the material on the layer
-            lLayer->SetMaterials(lLayerElementMaterial);
-
-            // Add an index to the lLayerElementMaterial.  Since we have only one, and are using eAllSame mapping mode,
-            // we only need to add one.
-            lLayerElementMaterial->GetIndexArray().Add(0);
-
-            lMaterial = FbxSurfaceLambert::Create(pScene, lMaterialName.Buffer());
-
-            // Generate primary and secondary colors.
-            lMaterial->Emissive           .Set(lBlack);
-            lMaterial->Ambient            .Set(lRed);
-            lMaterial->AmbientFactor      .Set(1.);
-            // Add texture for diffuse channel
-            lMaterial->Diffuse           .Set(lDiffuseColor);
-            lMaterial->DiffuseFactor     .Set(1.);
-            lMaterial->TransparencyFactor.Set(0.4);
-            lMaterial->ShadingModel      .Set(lShadingName);
-            //lMaterial->Shininess         .Set(0.5);
-            //lMaterial->Specular          .Set(lBlack);
-            //lMaterial->SpecularFactor    .Set(0.3);
-
-            lNode->AddMaterial(lMaterial);
-        }
-    }
-
-    FbxFileTexture* lTexture = FbxFileTexture::Create(pScene,"myCube");
-
-    // Set texture properties.
-    lTexture->SetFileName("mycube.jpg"); // Resource file is in current directory.
-	lTexture->SetTextureUse(FbxTexture::eStandard);
-    lTexture->SetMappingType(FbxTexture::eUV);
-	lTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-    lTexture->SetSwapUV(false);
-    lTexture->SetTranslation(0.0, 0.0);
-    lTexture->SetScale(1.0, 1.0);
-    lTexture->SetRotation(0.0, 0.0);
-	lTexture->UVSet.Set(FbxString("DiffuseUV"));
-
-    // don't forget to connect the texture to the corresponding property of the material
-    if (lMaterial)
-        lMaterial->Diffuse.ConnectSrcObject(lTexture);
-	/*
-    lTexture = FbxFileTexture::Create(pScene,"Ambient Texture");
-
-    // Set texture properties.
-    lTexture->SetFileName("myCube.jpg"); // Resource file is in current directory.
-	lTexture->SetTextureUse(FbxTexture::eStandard);
-    lTexture->SetMappingType(FbxTexture::eUV);
-	lTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-    lTexture->SetSwapUV(false);
-    lTexture->SetTranslation(0.0, 0.0);
-    lTexture->SetScale(1.0, 1.0);
-    lTexture->SetRotation(0.0, 0.0);
-
-    // don't forget to connect the texture to the corresponding property of the material
-    if (lMaterial)
-        lMaterial->Ambient.ConnectSrcObject(lTexture);
-
-    lTexture = FbxFileTexture::Create(pScene,"Emissive Texture");
-
-    // Set texture properties.
-    lTexture->SetFileName("myCube.jpg"); // Resource file is in current directory.
-	lTexture->SetTextureUse(FbxTexture::eStandard);
-    lTexture->SetMappingType(FbxTexture::eUV);
-	lTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-    lTexture->SetSwapUV(false);
-    lTexture->SetTranslation(0.0, 0.0);
-    lTexture->SetScale(1.0, 1.0);
-    lTexture->SetRotation(0.0, 0.0);
-
-    // don't forget to connect the texture to the corresponding property of the material
-    if (lMaterial)
-        lMaterial->Emissive.ConnectSrcObject(lTexture);*/
-}
-
-FbxNode* CreateCubeWithTexture(FbxScene* pScene, char* pName)
-{
-    int i, j;
-    FbxMesh* lMesh = FbxMesh::Create(pScene,pName);
-
-    FbxVector4 vertex0(-50, 0, 50);
-    FbxVector4 vertex1(50, 0, 50);
-    FbxVector4 vertex2(50, 100, 50);
-    FbxVector4 vertex3(-50, 100, 50);
-    FbxVector4 vertex4(-50, 0, -50);
-    FbxVector4 vertex5(50, 0, -50);
-    FbxVector4 vertex6(50, 100, -50);
-    FbxVector4 vertex7(-50, 100, -50);
-
-    FbxVector4 lNormalXPos(1, 0, 0);
-    FbxVector4 lNormalXNeg(-1, 0, 0);
-    FbxVector4 lNormalYPos(0, 1, 0);
-    FbxVector4 lNormalYNeg(0, -1, 0);
-    FbxVector4 lNormalZPos(0, 0, 1);
-    FbxVector4 lNormalZNeg(0, 0, -1);
-
-    // Create control points.
-    lMesh->InitControlPoints(24);
-    FbxVector4* lControlPoints = lMesh->GetControlPoints();
-
-    lControlPoints[0] = vertex0;
-    lControlPoints[1] = vertex1;
-    lControlPoints[2] = vertex2;
-    lControlPoints[3] = vertex3;
-    lControlPoints[4] = vertex1;
-    lControlPoints[5] = vertex5;
-    lControlPoints[6] = vertex6;
-    lControlPoints[7] = vertex2;
-    lControlPoints[8] = vertex5;
-    lControlPoints[9] = vertex4;
-    lControlPoints[10] = vertex7;
-    lControlPoints[11] = vertex6;
-    lControlPoints[12] = vertex4;
-    lControlPoints[13] = vertex0;
-    lControlPoints[14] = vertex3;
-    lControlPoints[15] = vertex7;
-    lControlPoints[16] = vertex3;
-    lControlPoints[17] = vertex2;
-    lControlPoints[18] = vertex6;
-    lControlPoints[19] = vertex7;
-    lControlPoints[20] = vertex1;
-    lControlPoints[21] = vertex0;
-    lControlPoints[22] = vertex4;
-    lControlPoints[23] = vertex5;
-
-    // We want to have one normal for each vertex (or control point),
-    // so we set the mapping mode to eBY_CONTROL_POINT.
-    FbxGeometryElementNormal* lGeometryElementNormal= lMesh->CreateElementNormal();
-
-	lGeometryElementNormal->SetMappingMode(FbxGeometryElement::eByControlPoint);
-
-    // Here are two different ways to set the normal values.
-    bool firstWayNormalCalculations=true;
-    if (firstWayNormalCalculations)
-    {    
-        // The first method is to set the actual normal value
-        // for every control point.
-		lGeometryElementNormal->SetReferenceMode(FbxGeometryElement::eDirect);
-
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYNeg);
-    }
-    else
-    {
-        // The second method is to the possible values of the normals
-        // in the direct array, and set the index of that value
-        // in the index array for every control point.
-		lGeometryElementNormal->SetReferenceMode(FbxGeometryElement::eIndexToDirect);
-
-        // Add the 6 different normals to the direct array
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalZNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalXNeg);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYPos);
-        lGeometryElementNormal->GetDirectArray().Add(lNormalYNeg);
-
-        // Now for each control point, we need to specify which normal to use
-        lGeometryElementNormal->GetIndexArray().Add(0); // index of lNormalZPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(0); // index of lNormalZPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(0); // index of lNormalZPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(0); // index of lNormalZPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(1); // index of lNormalXPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(1); // index of lNormalXPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(1); // index of lNormalXPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(1); // index of lNormalXPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(2); // index of lNormalZNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(2); // index of lNormalZNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(2); // index of lNormalZNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(2); // index of lNormalZNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(3); // index of lNormalXNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(3); // index of lNormalXNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(3); // index of lNormalXNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(3); // index of lNormalXNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(4); // index of lNormalYPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(4); // index of lNormalYPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(4); // index of lNormalYPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(4); // index of lNormalYPos in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(5); // index of lNormalYNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(5); // index of lNormalYNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(5); // index of lNormalYNeg in the direct array.
-        lGeometryElementNormal->GetIndexArray().Add(5); // index of lNormalYNeg in the direct array.
-    }
-    // Array of polygon vertices.
-    int lPolygonVertices[] = { 0, 1, 2, 3,
-        4, 5, 6, 7,
-        8, 9, 10, 11,
-        12, 13, 14, 15,
-        16, 17, 18, 19,
-        20, 21, 22, 23 };
-
-	//FbxGeometryElementMaterial *lm = lMesh->CreateElementMaterial();
-	//lm->SetName("myCube");
-	//lm->SetMappingMode( FbxLayerElement::eAllSame );
-
-    // Create UV for Diffuse channel
-    FbxGeometryElementUV* lUVDiffuseElement = lMesh->CreateElementUV( "DiffuseUV");
-	lUVDiffuseElement->SetMappingMode(FbxGeometryElement::eByPolygonVertex);
-	lUVDiffuseElement->SetReferenceMode(FbxGeometryElement::eIndexToDirect);
-
-    FbxVector2 lVectors0(0, 0);
-    FbxVector2 lVectors1(1, 0);
-    FbxVector2 lVectors2(1, 1);
-    FbxVector2 lVectors3(0, 1);
-
-    lUVDiffuseElement->GetDirectArray().Add(lVectors0);
-    lUVDiffuseElement->GetDirectArray().Add(lVectors1);
-    lUVDiffuseElement->GetDirectArray().Add(lVectors2);
-    lUVDiffuseElement->GetDirectArray().Add(lVectors3);
-
-    // Create UV for Ambient channel
-    //FbxGeometryElementUV* lUVAmbientElement = lMesh->CreateElementUV("AmbientUV");
-
-	//lUVAmbientElement->SetMappingMode(FbxGeometryElement::eByPolygonVertex);
-	//lUVAmbientElement->SetReferenceMode(FbxGeometryElement::eIndexToDirect);
-
-//    lVectors0.Set(0, 0);
- //   lVectors1.Set(1, 0);
-  //  lVectors2.Set(0, 0.418586879968643);
-   /// lVectors3.Set(1, 0.418586879968643);
-
-    //lUVAmbientElement->GetDirectArray().Add(lVectors0);
-    //lUVAmbientElement->GetDirectArray().Add(lVectors1);
-    //lUVAmbientElement->GetDirectArray().Add(lVectors2);
-    //lUVAmbientElement->GetDirectArray().Add(lVectors3);
-
-    // Create UV for Emissive channel
-    //FbxGeometryElementUV* lUVEmissiveElement = lMesh->CreateElementUV("EmissiveUV");
-
-	//lUVEmissiveElement->SetMappingMode(FbxGeometryElement::eByPolygonVertex);
-	//lUVEmissiveElement->SetReferenceMode(FbxGeometryElement::eIndexToDirect);
-
- //   lVectors0.Set(0.2343, 0);
- //   lVectors1.Set(1, 0.555);
- //   lVectors2.Set(0.333, 0.999);
- //   lVectors3.Set(0.555, 0.666);
-
-    //lUVEmissiveElement->GetDirectArray().Add(lVectors0);
-    //lUVEmissiveElement->GetDirectArray().Add(lVectors1);
-    //lUVEmissiveElement->GetDirectArray().Add(lVectors2);
-    //lUVEmissiveElement->GetDirectArray().Add(lVectors3);
-
-    //Now we have set the UVs as eINDEX_TO_DIRECT reference and in eBY_POLYGON_VERTEX  mapping mode
-    //we must update the size of the index array.
-    lUVDiffuseElement->GetIndexArray().SetCount(24);
-    //lUVAmbientElement->GetIndexArray().SetCount(24);
-    //lUVEmissiveElement->GetIndexArray().SetCount(24);
-
-    // Create polygons. Assign texture and texture UV indices.
-    for(i = 0; i < 6; i++)
-    {
-        //we won't use the default way of assigning textures, as we have
-        //textures on more than just the default (diffuse) channel.
-        lMesh->BeginPolygon();//-1, -1, false);
-
-		for(j = 0; j < 4; j++)
-        {
-            //this function points 
-            lMesh->AddPolygon(lPolygonVertices[i*4 + j] // Control point index. 
-            );
-            //Now we have to update the index array of the UVs for diffuse, ambient and emissive
-            lUVDiffuseElement->GetIndexArray().SetAt(i*4+j, j);
-            //lUVAmbientElement->GetIndexArray().SetAt(i*4+j, j);
-            //lUVEmissiveElement->GetIndexArray().SetAt(i*4+j, j);
-
-        }
-
-        lMesh->EndPolygon ();
-    }
-
-    FbxNode* lNode = FbxNode::Create(pScene,pName);
-
-    lNode->SetNodeAttribute(lMesh);
-	lNode->SetShadingMode(FbxNode::eTextureShading);
-
-    CreateTexture(pScene, lMesh);
-
-    return lNode;
-}
-
-void createScene( FbxScene* apScene )
-{
-	apScene->GetRootNode()->AddChild( CreateCubeWithTexture( apScene, "myCube" ) );
-}
+#include "fbx.h"
 
 int readInt( unsigned char* &apBuffer )
 {
@@ -403,33 +62,32 @@ struct Sector
 	Mesh* meshes;
 };
 
-void setupMesh( FbxMesh* apDst, Mesh* apSrc )
+void setupSectorMeshGeometry( FbxMesh* apDst, Mesh* apSrc )
 {
 	apDst->InitControlPoints( apSrc->verticesCount );
-    
-	//FbxGeometryElementMaterial* lMaterialElement = apDst->CreateElementMaterial();
-	//lMaterialElement->SetMappingMode(FbxGeometryElement::eAllSame);
-	//lMaterialElement->SetReferenceMode(FbxGeometryElement::eDirect);
 
     FbxGeometryElementNormal* lpNormals= apDst->CreateElementNormal();
 	lpNormals->SetMappingMode(FbxGeometryElement::eByControlPoint);
 	lpNormals->SetReferenceMode(FbxGeometryElement::eDirect);
     
-	FbxGeometryElementUV* lpUVs = apDst->CreateElementUV( "DiffuseUV");
+	FbxGeometryElementUV* lpUVs = apDst->CreateElementUV( "DiffuseUV" );
 	lpUVs->SetMappingMode(FbxGeometryElement::eByControlPoint);
 	lpUVs->SetReferenceMode(FbxGeometryElement::eDirect);
 	
 	FbxVector4* lpCP = apDst->GetControlPoints();
+	FbxVector4 lNormal;
+	FbxVector2 lUV;
 	for (int v = 0; v < apSrc->verticesCount; v++)
 	{
 		lpCP[ v ].Set( apSrc->vertices[ v ].x, apSrc->vertices[ v ].y, apSrc->vertices[ v ].z ); 
-		FbxVector4 lNormal;
+
 		lNormal.Set(  apSrc->vertices[ v ].nx, apSrc->vertices[ v ].ny, apSrc->vertices[ v ].nz );
 		lpNormals->GetDirectArray().Add( lNormal );
-		FbxVector2 lUV;
+
 		lUV.Set( apSrc->vertices[ v ].u, apSrc->vertices[ v ].v );
 		lpUVs->GetDirectArray().Add( lUV );
 	}
+
 	for (int i = 0; i < apSrc->indicesCount; )
 	{
 		apDst->BeginPolygon();
@@ -440,65 +98,70 @@ void setupMesh( FbxMesh* apDst, Mesh* apSrc )
 	}
 }
 
+void setupSectorMeshMaterial( FbxSurfaceLambert* apMaterial, FbxMesh* apMesh, FbxString aMaterialName )
+{
+	FbxGeometryElementMaterial* lMaterialElement = apMesh->CreateElementMaterial();
+	lMaterialElement->SetName(aMaterialName.Buffer());
+	lMaterialElement->SetMappingMode(FbxGeometryElement::eAllSame);
+	lMaterialElement->SetReferenceMode(FbxLayerElement::eDirect);
+		
+	FbxLayer* lpLayer = apMesh->GetLayer( 0 );
+    FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(apMesh, aMaterialName.Buffer());
+    lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
+	lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eDirect);
+    lpLayer->SetMaterials(lLayerElementMaterial);
+    lLayerElementMaterial->GetIndexArray().Add(0);
+		
+	FbxDouble3 lDC(1,1,1);
+	apMaterial->Diffuse.Set( lDC );
+	apMaterial->ShadingModel.Set(aMaterialName);
+    apMaterial->Emissive.Set( FbxDouble3(0,0,0) );
+    apMaterial->Ambient.Set(FbxDouble3(0,0,0));
+    apMaterial->AmbientFactor.Set(1.);
+    apMaterial->Diffuse.Set(FbxDouble3(1,1,1));
+    apMaterial->DiffuseFactor.Set(1.);
+}
+
+void setupSectorMaterialTexture( FbxFileTexture* apTexture, FbxString aTextureName )
+{
+	apTexture->SetFileName(aTextureName.Buffer()); 
+	apTexture->SetTextureUse(FbxTexture::eStandard);
+	apTexture->SetMappingType(FbxTexture::eUV);
+	apTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
+	apTexture->UVSet.Set(FbxString("DiffuseUV"));
+	apTexture->SetTranslation(0.0, 0.0);
+	apTexture->SetScale(1.0, 1.0);
+	apTexture->SetRotation(0.0, 0.0);
+}
+
 void createSectorNode( FbxScene* apScene, Sector* apSector )
 {
 	char lName[256];
 	sprintf( lName, "sec:%d", apSector->id );
 	FbxNode* lpSectorNode = FbxNode::Create( apScene, lName );
 	apScene->GetRootNode()->AddChild( lpSectorNode );
+	
 	for (int m = 0; m < apSector->meshesCount; m++ )
 	{
+		FbxString lMaterialName = apSector->meshes[ m ].textureName;
+		FbxString lTextureName = apSector->meshes[ m ].textureName;
 		sprintf( lName, "msh:%d", apSector->meshes[ m ].id );
+		
 		FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
 		FbxMesh* lpMesh = FbxMesh::Create( apScene, lName );
+		FbxSurfaceLambert* lpMaterial = FbxSurfaceLambert::Create( apScene, lMaterialName.Buffer());
+		FbxFileTexture* lpTexture = FbxFileTexture::Create(apScene,lTextureName.Buffer());
+		
+		lpMeshNode->AddMaterial(lpMaterial);
 		lpMeshNode->SetNodeAttribute( lpMesh );
 		lpMeshNode->SetShadingMode( FbxNode::eTextureShading );
-		lpSectorNode->AddChild( lpMeshNode );
-
-		setupMesh( lpMesh, apSector->meshes + m );
-		
-		FbxString lMaterialName = apSector->meshes[ m ].textureName;
-        FbxString lShadingName  = apSector->meshes[ m ].textureName;
-		FbxGeometryElementMaterial* lMaterialElement = lpMesh->CreateElementMaterial();
-		lMaterialElement->SetName(lMaterialName.Buffer() );
-		lMaterialElement->SetMappingMode(FbxGeometryElement::eAllSame);
-		lMaterialElement->SetReferenceMode(FbxLayerElement::eDirect);
-		
-		FbxLayer* lpLayer = lpMesh->GetLayer( 0 );
-        FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(lpMesh, lMaterialName.Buffer());
-        lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
-		lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eDirect);
-        lpLayer->SetMaterials(lLayerElementMaterial);
-        lLayerElementMaterial->GetIndexArray().Add(0);
-		
-		FbxSurfaceLambert* lpMaterial = lpMeshNode->GetSrcObject<FbxSurfaceLambert>(0);
-
-		FbxDouble3 lDC(1,1,1);
-        lpMaterial = FbxSurfaceLambert::Create(apScene, lMaterialName.Buffer());
-		lpMaterial->Diffuse.Set( lDC );
-		lpMaterial->ShadingModel.Set(lShadingName);
-        lpMeshNode->AddMaterial(lpMaterial);
-            // Generate primary and secondary colors.
-            lpMaterial->Emissive           .Set( FbxDouble3(0,0,0) );
-            lpMaterial->Ambient            .Set(FbxDouble3(0,0,0));
-            lpMaterial->AmbientFactor      .Set(1.);
-            // Add texture for diffuse channel
-            lpMaterial->Diffuse           .Set(FbxDouble3(1,1,1));
-            lpMaterial->DiffuseFactor     .Set(1.);
-            //lpMaterial->TransparencyFactor.Set(0.4);
-            lpMaterial->ShadingModel      .Set(lShadingName);
-
-		FbxFileTexture* lpTexture = FbxFileTexture::Create(apScene,lMaterialName.Buffer());
-		lpTexture->SetFileName(lMaterialName.Buffer()); 
-		lpTexture->SetTextureUse(FbxTexture::eStandard);
-		lpTexture->SetMappingType(FbxTexture::eUV);
-		lpTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-		lpTexture->UVSet.Set(FbxString("DiffuseUV"));
-		lpTexture->SetTranslation(0.0, 0.0);
-		lpTexture->SetScale(1.0, 1.0);
-		lpTexture->SetRotation(0.0, 0.0);
 		lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
 
+		setupSectorMeshGeometry( lpMesh, apSector->meshes + m );
+		setupSectorMeshMaterial( lpMaterial, lpMesh, lMaterialName );
+		setupSectorMaterialTexture( lpTexture, lTextureName );
+
+		lpSectorNode->AddChild( lpMeshNode );
 	}
 }
 
@@ -552,177 +215,26 @@ void dust2FBX( FbxScene* apScene, char* apFileName )
 		}
 	}
 
-	int done = 0;
+
 	for(int s = 0; s < lSectorsCount; s++ )
 		if ( lpSectors[ s ].meshesCount > 0 )
-		{
-			//if ( s > 8000 )
-			{
 			createSectorNode( apScene, lpSectors + s );
-			done++;
-			}
-			//if ( done == 1 )
-			//	break;
-		}
 
 	delete lpFileBuffer;
 }
 
-#ifdef IOS_REF
-	#undef  IOS_REF
-	#define IOS_REF (*(pManager->GetIOSettings()))
-#endif
-
-void InitializeSdkObjects(FbxManager*& pManager, FbxScene*& pScene)
-{
-    //The first thing to do is to create the FBX Manager which is the object allocator for almost all the classes in the SDK
-    pManager = FbxManager::Create();
-    if( !pManager )
-    {
-        FBXSDK_printf("Error: Unable to create FBX Manager!\n");
-        exit(1);
-    }
-	else FBXSDK_printf("Autodesk FBX SDK version %s\n", pManager->GetVersion());
-
-	//Create an IOSettings object. This object holds all import/export settings.
-	FbxIOSettings* ios = FbxIOSettings::Create(pManager, IOSROOT);
-	pManager->SetIOSettings(ios);
-
-	//Load plugins from the executable directory (optional)
-	FbxString lPath = FbxGetApplicationDirectory();
-	pManager->LoadPluginsDirectory(lPath.Buffer());
-
-    //Create an FBX scene. This object holds most objects imported/exported from/to files.
-    pScene = FbxScene::Create(pManager, "My Scene");
-	if( !pScene )
-    {
-        FBXSDK_printf("Error: Unable to create FBX scene!\n");
-        exit(1);
-    }
-}
-
-void DestroySdkObjects(FbxManager* pManager, bool pExitStatus)
-{
-    //Delete the FBX Manager. All the objects that have been allocated using the FBX Manager and that haven't been explicitly destroyed are also automatically destroyed.
-    if( pManager ) pManager->Destroy();
-	if( pExitStatus ) FBXSDK_printf("Program Success!\n");
-}
-
-bool SaveScene(FbxManager* pManager, FbxDocument* pScene, const char* pFilename, int pFileFormat, bool pEmbedMedia)
-{
-    int lMajor, lMinor, lRevision;
-    bool lStatus = true;
-
-    // Create an exporter.
-    FbxExporter* lExporter = FbxExporter::Create(pManager, "");
-
-    if( pFileFormat < 0 || pFileFormat >= pManager->GetIOPluginRegistry()->GetWriterFormatCount() )
-    {
-        // Write in fall back format in less no ASCII format found
-        pFileFormat = pManager->GetIOPluginRegistry()->GetNativeWriterFormat();
-
-        //Try to export in ASCII if possible
-        int lFormatIndex, lFormatCount = pManager->GetIOPluginRegistry()->GetWriterFormatCount();
-
-        for (lFormatIndex=0; lFormatIndex<lFormatCount; lFormatIndex++)
-        {
-            if (pManager->GetIOPluginRegistry()->WriterIsFBX(lFormatIndex))
-            {
-                FbxString lDesc =pManager->GetIOPluginRegistry()->GetWriterFormatDescription(lFormatIndex);
-                const char *lASCII = "ascii";
-                if (lDesc.Find(lASCII)>=0)
-                {
-                    pFileFormat = lFormatIndex;
-                    break;
-                }
-            }
-        } 
-    }
-
-    // Set the export states. By default, the export states are always set to 
-    // true except for the option eEXPORT_TEXTURE_AS_EMBEDDED. The code below 
-    // shows how to change these states.
-    IOS_REF.SetBoolProp(EXP_FBX_MATERIAL,        true);
-    IOS_REF.SetBoolProp(EXP_FBX_TEXTURE,         true);
-    IOS_REF.SetBoolProp(EXP_FBX_EMBEDDED,        pEmbedMedia);
-    IOS_REF.SetBoolProp(EXP_FBX_SHAPE,           true);
-    IOS_REF.SetBoolProp(EXP_FBX_GOBO,            true);
-    IOS_REF.SetBoolProp(EXP_FBX_ANIMATION,       true);
-    IOS_REF.SetBoolProp(EXP_FBX_GLOBAL_SETTINGS, true);
-
-    // Initialize the exporter by providing a filename.
-    if(lExporter->Initialize(pFilename, pFileFormat, pManager->GetIOSettings()) == false)
-    {
-        FBXSDK_printf("Call to FbxExporter::Initialize() failed.\n");
-        FBXSDK_printf("Error returned: %s\n\n", lExporter->GetStatus().GetErrorString());
-        return false;
-    }
-
-    FbxManager::GetFileFormatVersion(lMajor, lMinor, lRevision);
-    FBXSDK_printf("FBX file format version %d.%d.%d\n\n", lMajor, lMinor, lRevision);
-
-    // Export the scene.
-    lStatus = lExporter->Export(pScene); 
-
-    // Destroy the exporter.
-    lExporter->Destroy();
-    return lStatus;
-}
-
 int _tmain(int argc, _TCHAR* argv[])
 {
-	// Create the FBX SDK manager
-	//FbxManager* lSdkManager = FbxManager::Create();
-
-	// Create an IOSettings object.
-	//FbxIOSettings * ios = FbxIOSettings::Create(lSdkManager, IOSROOT );
-	//lSdkManager->SetIOSettings(ios);
-	/*
-	// Set the FbxIOSettings EXP_FBX_EMBEDDED property to true.
-	(*(lSdkManager->GetIOSettings())).SetBoolProp(EXP_FBX_EMBEDDED, true);
-
-	// Get the appropriate file format.
-	int lFileFormat = lSdkManager->GetIOPluginRegistry()->GetNativeWriterFormat();
-
-	// Create an exporter.
-	FbxExporter* lExporter = FbxExporter::Create(lSdkManager, "");
-
-	// Declare the path and filename of the file to which the scene will be exported.
-	// In this case, the file will be in the same directory as the executable.
-	const char* lFilename = "Anasta1.fbx";
-
-	// Initialize the exporter.
-	bool lExportStatus = lExporter->Initialize(lFilename, lFileFormat, lSdkManager->GetIOSettings());
-
-	if( !lExportStatus )
-	{
-		printf("Call to FbxExporter::Initialize() failed.\n");
-		return false;
-	}
-	*/
-
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
-    char* lSampleFileName = NULL;
     bool lResult = false;
 
-    // Prepare the FBX SDK.
     InitializeSdkObjects(lSdkManager, lScene);
 
-	// Create a new scene so it can be populated by the imported file.
-	//FbxScene* lpScene = FbxScene::Create(lSdkManager, "Anasta1" );
-
-	//createScene( lScene );
 	dust2FBX( lScene, "Anasta1" );
+
 	SaveScene( lSdkManager, lScene, "Anasta1.fbx",-1,false);
 
-	// Export the scene to the file.
-	//lExporter->Export(lpScene);
-
-	// Destroy the exporter.
-	//lExporter->Destroy();
-
-    // Destroy all objects created by the FBX SDK.
     DestroySdkObjects(lSdkManager, lResult);
 
 	return 0;
