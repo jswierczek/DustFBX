@@ -37,6 +37,8 @@ bool readBool( unsigned char* &apBuffer )
 	return lValue;
 }
 
+//////////////////////
+
 struct Vertex
 {
 	float x,y,z;
@@ -44,7 +46,7 @@ struct Vertex
 	float u,v;
 };
 
-struct Mesh
+struct SectorMesh
 {
 	int id;
 	char* textureName;
@@ -59,10 +61,10 @@ struct Sector
 	int id;
 	float x, y, z;
 	int meshesCount;
-	Mesh* meshes;
+	SectorMesh* meshes;
 };
 
-void setupSectorMeshGeometry( FbxMesh* apDst, Mesh* apSrc )
+void setupSectorMeshGeometry( FbxMesh* apDst, SectorMesh* apSrc )
 {
 	apDst->InitControlPoints( apSrc->verticesCount );
 
@@ -165,11 +167,11 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 	}
 }
 
-void dust2FBX( FbxScene* apScene, char* apFileName )
+void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
 
-	sprintf( lSource, "%s.gfbx", apFileName);
+	sprintf( lSource, "..//..//DustResources//levels//%s.gfbx", apFileName);
 	FILE *lpFile = fopen( lSource, "rb" );
 	fseek( lpFile, 0, SEEK_END );
 	int lFileSize = ftell( lpFile );
@@ -188,8 +190,8 @@ void dust2FBX( FbxScene* apScene, char* apFileName )
 		lpSectors[ s ].y = readFloat( lpBufferPosition );
 		lpSectors[ s ].z = readFloat( lpBufferPosition );
 		lpSectors[ s ].meshesCount = readInt( lpBufferPosition );
-		lpSectors[ s ].meshes = new Mesh[ lpSectors[ s ].meshesCount ];
-		Mesh* lpMeshes = lpSectors[ s ].meshes;
+		lpSectors[ s ].meshes = new SectorMesh[ lpSectors[ s ].meshesCount ];
+		SectorMesh* lpMeshes = lpSectors[ s ].meshes;
 		for (int m = 0; m < lpSectors[ s ].meshesCount; m++)
 		{
 			lpMeshes[ m ].id = readInt( lpBufferPosition );
@@ -215,11 +217,119 @@ void dust2FBX( FbxScene* apScene, char* apFileName )
 		}
 	}
 
-
+	//////
+	// fbx creation
 	for(int s = 0; s < lSectorsCount; s++ )
 		if ( lpSectors[ s ].meshesCount > 0 )
 			createSectorNode( apScene, lpSectors + s );
+	//////
 
+	for (int s = 0; s < lSectorsCount; s++)
+	{
+		for (int m = 0; m < lpSectors[ s ].meshesCount; m++)
+		{
+			delete lpSectors[ s ].meshes[ m ].textureName;
+			delete lpSectors[ s ].meshes[ m ].vertices;
+			delete lpSectors[ s ].meshes[ m ].indices;
+		}
+		delete lpSectors[ s ].meshes;
+	}
+	delete lpSectors;
+	delete lpFileBuffer;
+}
+
+////////////////////////
+
+struct MotionSequence
+{
+	int firstKeyframeNumber;
+	int keyframesCount;
+};
+
+struct MotionKeyframe
+{
+	int number;
+	float x,y,z;
+	float qx,qy,qz,qw;
+};
+
+struct MotionMesh
+{
+	int visible;
+	int type;
+	char* name;
+	MotionKeyframe *keyframes;
+};
+
+struct Motion
+{
+	int meshesCount;
+	int lightframesCount;
+	int keyframesCount;
+	int sequencesCount;
+	MotionSequence* sequences;
+	MotionMesh* meshes;
+};
+
+void dustMotion2FBX( FbxScene* apScene, char* apFileName )
+{
+	char lSource[256];
+
+	sprintf( lSource, "..//..//DustResources//objects//%s.motion", apFileName);
+	FILE *lpFile = fopen( lSource, "rb" );
+	fseek( lpFile, 0, SEEK_END );
+	int lFileSize = ftell( lpFile );
+	fseek( lpFile, 0, SEEK_SET );
+	unsigned char* lpFileBuffer = new unsigned char[ lFileSize ];
+	fread( lpFileBuffer, 1, lFileSize, lpFile );
+	fclose( lpFile );
+	unsigned char* lpBufferPosition = lpFileBuffer;
+
+	Motion lMotion;
+	lMotion.meshesCount = readInt( lpBufferPosition );
+	lMotion.keyframesCount = readInt( lpBufferPosition );
+	lMotion.lightframesCount = readInt( lpBufferPosition );
+	lMotion.sequencesCount = readInt( lpBufferPosition );
+
+	lMotion.sequences = new MotionSequence[ lMotion.sequencesCount ];
+	for ( int i = 0; i < lMotion.sequencesCount; i++ )
+	{
+		lMotion.sequences[ i ].firstKeyframeNumber = readInt( lpBufferPosition );
+		lMotion.sequences[ i ].keyframesCount = readInt( lpBufferPosition );
+	}
+
+	lMotion.meshes = new MotionMesh[ lMotion.meshesCount ];
+	for ( int i = 0; i < lMotion.meshesCount; i++ )
+	{
+		lMotion.meshes[ i ].name = readString( lpBufferPosition );
+		lMotion.meshes[ i ].visible = readBool( lpBufferPosition );
+		lMotion.meshes[ i ].type = readInt( lpBufferPosition );
+		lMotion.meshes[ i ].keyframes = new MotionKeyframe[ lMotion.keyframesCount ];
+		for (int j = 0; j < lMotion.keyframesCount; j++ )
+		{
+			lMotion.meshes[i].keyframes[j].number = readInt( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].x = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].y = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].z = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].qx = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].qy = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].qz = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].qw = readFloat( lpBufferPosition );
+		}
+	}
+
+	////
+	// fbx creation
+
+	////
+
+	for ( int i = 0; i < lMotion.meshesCount; i++ )
+	{
+		delete lMotion.meshes[ i ].name;
+		delete lMotion.meshes[ i ].keyframes;
+	}
+	delete lMotion.sequences;
+	delete lMotion.meshes;	
 	delete lpFileBuffer;
 }
 
@@ -231,9 +341,21 @@ int _tmain(int argc, _TCHAR* argv[])
 
     InitializeSdkObjects(lSdkManager, lScene);
 
-	dust2FBX( lScene, "Anasta1" );
+	//////////////
+	// Konwersja jednego pliku *.gfbx tworzonego przez DustConverter
+	// Pliki Ÿród³owe s¹ szukane w DustResources a efekty dzia³ania s¹ tworzone w DustAssets. 
+	// Tekstury nie s¹ w³¹czane do pliku FBX
+	
+	dustLevel2FBX( lScene, "Anasta1" );
+	SaveScene( lSdkManager, lScene, "..//..//DustAssets//levels//Anasta1.fbx",-1,false);
 
-	SaveScene( lSdkManager, lScene, "Anasta1.fbx",-1,false);
+	///////////////
+	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
+	// Pliki Ÿród³owe s¹ szukane w DustResources a efekty dzia³ania s¹ tworzone w DustAssets. 
+	// Tekstury nie s¹ w³¹czane do pliku FBX.
+	
+	//dustMotion2FBX( lScene, "autogun" );
+	//SaveScene( lSdkManager, lScene, "autogun.fbx", -1, false );
 
     DestroySdkObjects(lSdkManager, lResult);
 
