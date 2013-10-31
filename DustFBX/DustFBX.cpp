@@ -253,11 +253,34 @@ struct MotionKeyframe
 	float qx,qy,qz,qw;
 };
 
+struct MotionVertex
+{
+	float x,y,z;
+	float nx,ny,nz;
+	float u,v;
+};
+
+struct MotionFace
+{
+	int v1, v2, v3;
+};
+
+struct MotionSubmesh
+{
+	char* materialName;
+	int facesCount;
+	int verticesCount;
+	MotionFace* faces;
+	MotionVertex* vertices;
+};
+
 struct MotionMesh
 {
 	int visible;
 	int type;
 	char* name;
+	int submeshesCount;
+	MotionSubmesh* submeshes;
 	MotionKeyframe *keyframes;
 };
 
@@ -270,6 +293,51 @@ struct Motion
 	MotionSequence* sequences;
 	MotionMesh* meshes;
 };
+
+void loadMotionMesh( char* apMotionName, MotionMesh* apMesh )
+{
+	char lSource[256];
+
+	sprintf( lSource, "..//..//DustResources//objects//%s_%s.mesh", apMotionName, apMesh->name);
+	FILE *lpFile = fopen( lSource, "rb" );
+	fseek( lpFile, 0, SEEK_END );
+	int lFileSize = ftell( lpFile );
+	fseek( lpFile, 0, SEEK_SET );
+	unsigned char* lpFileBuffer = new unsigned char[ lFileSize ];
+	fread( lpFileBuffer, 1, lFileSize, lpFile );
+	fclose( lpFile );
+	unsigned char* lpBufferPosition = lpFileBuffer;
+
+	apMesh->submeshesCount = readInt( lpBufferPosition );
+	apMesh->submeshes = new MotionSubmesh[ apMesh->submeshesCount ];
+	for( int i = 0; i < apMesh->submeshesCount; i++ )
+	{
+		apMesh->submeshes[ i ].materialName = readString( lpBufferPosition );
+		apMesh->submeshes[ i ].facesCount = readInt( lpBufferPosition );
+		apMesh->submeshes[ i ].verticesCount = readInt( lpBufferPosition );
+		apMesh->submeshes[ i ].faces = new MotionFace[ apMesh->submeshes[ i ].facesCount ];
+		apMesh->submeshes[ i ].vertices = new MotionVertex[ apMesh->submeshes[ i ].verticesCount ];
+		for ( int j = 0 ; j < apMesh->submeshes[ i ].verticesCount; j++ )
+		{
+			apMesh->submeshes[ i ].vertices[ j ].x = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].y = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].z = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].nx = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].ny = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].nz = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].u = readFloat( lpBufferPosition );
+			apMesh->submeshes[ i ].vertices[ j ].v = readFloat( lpBufferPosition );
+		}
+		for ( int j = 0; j < apMesh->submeshes[ i ].facesCount; j++ )
+		{
+			apMesh->submeshes[ i ].faces[ j ].v1 = readInt ( lpBufferPosition );
+			apMesh->submeshes[ i ].faces[ j ].v2 = readInt ( lpBufferPosition );
+			apMesh->submeshes[ i ].faces[ j ].v3 = readInt ( lpBufferPosition );
+		}
+	}
+
+	delete lpFileBuffer;
+}
 
 void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 {
@@ -316,6 +384,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 			lMotion.meshes[i].keyframes[j].qz = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].qw = readFloat( lpBufferPosition );
 		}
+		loadMotionMesh( apFileName, lMotion.meshes + i );
 	}
 
 	////
@@ -325,8 +394,15 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 	for ( int i = 0; i < lMotion.meshesCount; i++ )
 	{
+		for ( int j = 0; j < lMotion.meshes[ i ].submeshesCount; j++ )
+		{
+			delete lMotion.meshes[ i ].submeshes[ j ].faces;
+			delete lMotion.meshes[ i ].submeshes[ j ].vertices;
+			delete lMotion.meshes[ i ].submeshes[ j ].materialName;
+		}
 		delete lMotion.meshes[ i ].name;
 		delete lMotion.meshes[ i ].keyframes;
+		delete lMotion.meshes[ i ].submeshes;
 	}
 	delete lMotion.sequences;
 	delete lMotion.meshes;	
@@ -346,16 +422,16 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Pliki Ÿród³owe s¹ szukane w DustResources a efekty dzia³ania s¹ tworzone w DustAssets. 
 	// Tekstury nie s¹ w³¹czane do pliku FBX
 	
-	dustLevel2FBX( lScene, "Anasta1" );
-	SaveScene( lSdkManager, lScene, "..//..//DustAssets//levels//Anasta1.fbx",-1,false);
+	//dustLevel2FBX( lScene, "Anasta1" );
+	//SaveScene( lSdkManager, lScene, "..//..//DustAssets//levels//Anasta1.fbx",-1,false);
 
 	///////////////
 	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
 	// Pliki Ÿród³owe s¹ szukane w DustResources a efekty dzia³ania s¹ tworzone w DustAssets. 
 	// Tekstury nie s¹ w³¹czane do pliku FBX.
 	
-	//dustMotion2FBX( lScene, "autogun" );
-	//SaveScene( lSdkManager, lScene, "autogun.fbx", -1, false );
+	dustMotion2FBX( lScene, "autogun" );
+	SaveScene( lSdkManager, lScene, "autogun.fbx", -1, false );
 
     DestroySdkObjects(lSdkManager, lResult);
 
