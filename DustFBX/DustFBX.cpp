@@ -39,6 +39,44 @@ bool readBool( unsigned char* &apBuffer )
 
 //////////////////////
 
+void setupFbxMeshMaterial( FbxSurfaceLambert* apMaterial, FbxMesh* apMesh, FbxString aMaterialName )
+{
+	FbxGeometryElementMaterial* lMaterialElement = apMesh->CreateElementMaterial();
+	lMaterialElement->SetName(aMaterialName.Buffer());
+	lMaterialElement->SetMappingMode(FbxGeometryElement::eAllSame);
+	lMaterialElement->SetReferenceMode(FbxLayerElement::eDirect);
+		
+	FbxLayer* lpLayer = apMesh->GetLayer( 0 );
+    FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(apMesh, aMaterialName.Buffer());
+    lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
+	lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eDirect);
+    lpLayer->SetMaterials(lLayerElementMaterial);
+    lLayerElementMaterial->GetIndexArray().Add(0);
+		
+	FbxDouble3 lDC(1,1,1);
+	apMaterial->Diffuse.Set( lDC );
+	apMaterial->ShadingModel.Set(aMaterialName);
+    apMaterial->Emissive.Set( FbxDouble3(0,0,0) );
+    apMaterial->Ambient.Set(FbxDouble3(0,0,0));
+    apMaterial->AmbientFactor.Set(1.);
+    apMaterial->Diffuse.Set(FbxDouble3(1,1,1));
+    apMaterial->DiffuseFactor.Set(1.);
+}
+
+void setupFbxMeshTexture( FbxFileTexture* apTexture, FbxString aTextureName )
+{
+	apTexture->SetFileName(aTextureName.Buffer()); 
+	apTexture->SetTextureUse(FbxTexture::eStandard);
+	apTexture->SetMappingType(FbxTexture::eUV);
+	apTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
+	apTexture->UVSet.Set(FbxString("DiffuseUV"));
+	apTexture->SetTranslation(0.0, 0.0);
+	apTexture->SetScale(1.0, 1.0);
+	apTexture->SetRotation(0.0, 0.0);
+}
+
+//////////////////////
+
 struct Vertex
 {
 	float x,y,z;
@@ -100,42 +138,6 @@ void setupSectorMeshGeometry( FbxMesh* apDst, SectorMesh* apSrc )
 	}
 }
 
-void setupSectorMeshMaterial( FbxSurfaceLambert* apMaterial, FbxMesh* apMesh, FbxString aMaterialName )
-{
-	FbxGeometryElementMaterial* lMaterialElement = apMesh->CreateElementMaterial();
-	lMaterialElement->SetName(aMaterialName.Buffer());
-	lMaterialElement->SetMappingMode(FbxGeometryElement::eAllSame);
-	lMaterialElement->SetReferenceMode(FbxLayerElement::eDirect);
-		
-	FbxLayer* lpLayer = apMesh->GetLayer( 0 );
-    FbxLayerElementMaterial* lLayerElementMaterial = FbxLayerElementMaterial::Create(apMesh, aMaterialName.Buffer());
-    lLayerElementMaterial->SetMappingMode(FbxLayerElement::eAllSame);
-	lLayerElementMaterial->SetReferenceMode(FbxLayerElement::eDirect);
-    lpLayer->SetMaterials(lLayerElementMaterial);
-    lLayerElementMaterial->GetIndexArray().Add(0);
-		
-	FbxDouble3 lDC(1,1,1);
-	apMaterial->Diffuse.Set( lDC );
-	apMaterial->ShadingModel.Set(aMaterialName);
-    apMaterial->Emissive.Set( FbxDouble3(0,0,0) );
-    apMaterial->Ambient.Set(FbxDouble3(0,0,0));
-    apMaterial->AmbientFactor.Set(1.);
-    apMaterial->Diffuse.Set(FbxDouble3(1,1,1));
-    apMaterial->DiffuseFactor.Set(1.);
-}
-
-void setupSectorMaterialTexture( FbxFileTexture* apTexture, FbxString aTextureName )
-{
-	apTexture->SetFileName(aTextureName.Buffer()); 
-	apTexture->SetTextureUse(FbxTexture::eStandard);
-	apTexture->SetMappingType(FbxTexture::eUV);
-	apTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
-	apTexture->UVSet.Set(FbxString("DiffuseUV"));
-	apTexture->SetTranslation(0.0, 0.0);
-	apTexture->SetScale(1.0, 1.0);
-	apTexture->SetRotation(0.0, 0.0);
-}
-
 void createSectorNode( FbxScene* apScene, Sector* apSector )
 {
 	char lName[256];
@@ -160,8 +162,8 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 		lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
 
 		setupSectorMeshGeometry( lpMesh, apSector->meshes + m );
-		setupSectorMeshMaterial( lpMaterial, lpMesh, lMaterialName );
-		setupSectorMaterialTexture( lpTexture, lTextureName );
+		setupFbxMeshMaterial( lpMaterial, lpMesh, lMaterialName );
+		setupFbxMeshTexture( lpTexture, lTextureName );
 
 		lpSectorNode->AddChild( lpMeshNode );
 	}
@@ -290,6 +292,7 @@ struct Motion
 	int lightframesCount;
 	int keyframesCount;
 	int sequencesCount;
+	char* name;
 	MotionSequence* sequences;
 	MotionMesh* meshes;
 };
@@ -339,6 +342,137 @@ void loadMotionMesh( char* apMotionName, MotionMesh* apMesh )
 	delete lpFileBuffer;
 }
 
+void setupMotionMeshGeometry( FbxMesh* apDst, MotionSubmesh* apSrc )
+{
+	apDst->InitControlPoints( apSrc->verticesCount );
+
+    FbxGeometryElementNormal* lpNormals= apDst->CreateElementNormal();
+	lpNormals->SetMappingMode(FbxGeometryElement::eByControlPoint);
+	lpNormals->SetReferenceMode(FbxGeometryElement::eDirect);
+    
+	FbxGeometryElementUV* lpUVs = apDst->CreateElementUV( "DiffuseUV" );
+	lpUVs->SetMappingMode(FbxGeometryElement::eByControlPoint);
+	lpUVs->SetReferenceMode(FbxGeometryElement::eDirect);
+	
+	FbxVector4* lpCP = apDst->GetControlPoints();
+	FbxVector4 lNormal;
+	FbxVector2 lUV;
+	for (int v = 0; v < apSrc->verticesCount; v++)
+	{
+		lpCP[ v ].Set( apSrc->vertices[ v ].x, apSrc->vertices[ v ].y, apSrc->vertices[ v ].z ); 
+
+		lNormal.Set(  apSrc->vertices[ v ].nx, apSrc->vertices[ v ].ny, apSrc->vertices[ v ].nz );
+		lpNormals->GetDirectArray().Add( lNormal );
+
+		lUV.Set( apSrc->vertices[ v ].u, apSrc->vertices[ v ].v );
+		lpUVs->GetDirectArray().Add( lUV );
+	}
+	
+	for (int i = 0; i < apSrc->facesCount; i++ )
+	{
+		apDst->BeginPolygon();
+		apDst->AddPolygon( apSrc->faces[ i ].v1 );
+		apDst->AddPolygon( apSrc->faces[ i ].v2 );		
+		apDst->AddPolygon( apSrc->faces[ i ].v3 );
+		apDst->EndPolygon();
+	}
+}
+
+void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
+{
+	char lName[256];
+	sprintf( lName, "motion:%s", apMotion->name );
+	FbxNode* lpSectorNode = FbxNode::Create( apScene, lName );
+	apScene->GetRootNode()->AddChild( lpSectorNode );
+	
+	FbxAnimStack* lpAnimations = FbxAnimStack::Create( apScene, "Sequences" );
+
+	FbxAnimLayer** lpSequences = new FbxAnimLayer*[ apMotion->sequencesCount ];
+	for (int a = 0; a < apMotion->sequencesCount; a++ )
+	{
+		char lSequenceName[256]; sprintf( lSequenceName, "seq:%d", a );
+		FbxAnimLayer* lpSequence = FbxAnimLayer::Create( apScene, lSequenceName );
+		lpAnimations->AddMember( lpSequence );
+		lpSequences[ a ] = lpSequence;
+	}
+
+	for (int m = 0; m < apMotion->meshesCount; m++ )
+	{
+		if ( apMotion->meshes[ m ].visible )
+			for ( int sm = 0; sm < apMotion->meshes[ m ].submeshesCount; sm++ )
+			{
+				char lMaterial[ 256 ];
+				if ( strncmp( apMotion->meshes[ m ].submeshes[ sm ].materialName, "texture_", 8 ) == 0 )
+				{
+					strcpy( lMaterial, apMotion->meshes[ m ].submeshes[ sm ].materialName + 8 );
+					strcat( lMaterial, ".jpg" );
+				}
+				else
+					strcpy( lMaterial, apMotion->meshes[ m ].submeshes[ sm ].materialName );
+				FbxString lMaterialName = lMaterial;
+				FbxString lTextureName = lMaterial;
+				sprintf( lName, "msh:%s.%d", apMotion->meshes[ m ].name, sm );
+		
+				FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
+				FbxMesh* lpMesh = FbxMesh::Create( apScene, lName );
+				FbxSurfaceLambert* lpMaterial = FbxSurfaceLambert::Create( apScene, lMaterialName.Buffer());
+				FbxFileTexture* lpTexture = FbxFileTexture::Create(apScene,lTextureName.Buffer());
+		
+				lpMeshNode->AddMaterial(lpMaterial);
+				lpMeshNode->SetNodeAttribute( lpMesh );
+				lpMeshNode->SetShadingMode( FbxNode::eTextureShading );
+				lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
+
+				setupMotionMeshGeometry( lpMesh, &apMotion->meshes[ m ].submeshes[ sm ] );
+				setupFbxMeshMaterial( lpMaterial, lpMesh, lMaterialName );
+				setupFbxMeshTexture( lpTexture, lTextureName );
+
+				lpSectorNode->AddChild( lpMeshNode );
+				
+				for (int a = 0; a < apMotion->sequencesCount; a++ )
+				{
+					FbxAnimCurveNode* lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclTranslation, apScene );
+					lpSequences[ a ]->AddMember( lpCurveNode );	
+					FbxAnimCurve* lpCurveT = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], true );
+					FbxAnimCurve* lpCurveR = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], true );
+					
+					lpCurveT->KeyModifyBegin();
+					FbxTime lTime;
+					FbxAnimCurveKey lCurveKey;
+					for (int k = 0; k < apMotion->sequences[ a ].keyframesCount; k++)
+					{
+						MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ a ].firstKeyframeNumber + k ];
+						lTime.SetSecondDouble( (double)k );
+						lCurveKey.Set( lTime, key->x );
+						lCurveKey.Set( lTime, key->y );
+						lCurveKey.Set( lTime, key->z );
+						lpCurveT->KeyAdd( lTime, lCurveKey );
+					}
+					lpCurveT->KeyModifyEnd();
+
+					lpCurveR->KeyModifyBegin();
+					for (int k = 0; k < apMotion->sequences[ a ].keyframesCount; k++)
+					{
+						MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ a ].firstKeyframeNumber + k ];
+						lTime.SetSecondDouble( (double)k );
+
+						float roll  = atan2(2*key->qy*key->qw - 2*key->qx*key->qz, 1 - 2*key->qy*key->qy - 2*key->qz*key->qz);
+						float pitch = atan2(2*key->qx*key->qw - 2*key->qy*key->qz, 1 - 2*key->qx*key->qx - 2*key->qz*key->qz);
+						float yaw   = asin(2*key->qx*key->qy + 2*key->qz*key->qw);
+
+						lCurveKey.Set( lTime, roll );
+						lCurveKey.Set( lTime, pitch );
+						lCurveKey.Set( lTime, yaw );
+						lpCurveR->KeyAdd( lTime, lCurveKey );
+					}
+					lpCurveR->KeyModifyEnd();
+				}
+			}
+	}
+
+	delete lpSequences;
+}
+
 void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
@@ -354,6 +488,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 	unsigned char* lpBufferPosition = lpFileBuffer;
 
 	Motion lMotion;
+	lMotion.name = new char[ strlen( apFileName ) + 1 ]; strcpy( lMotion.name, apFileName );
 	lMotion.meshesCount = readInt( lpBufferPosition );
 	lMotion.keyframesCount = readInt( lpBufferPosition );
 	lMotion.lightframesCount = readInt( lpBufferPosition );
@@ -389,7 +524,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 	////
 	// fbx creation
-
+	createMotionMeshNode( apScene, &lMotion );
 	////
 
 	for ( int i = 0; i < lMotion.meshesCount; i++ )
@@ -405,7 +540,8 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 		delete lMotion.meshes[ i ].submeshes;
 	}
 	delete lMotion.sequences;
-	delete lMotion.meshes;	
+	delete lMotion.meshes;
+	delete lMotion.name;
 	delete lpFileBuffer;
 }
 
