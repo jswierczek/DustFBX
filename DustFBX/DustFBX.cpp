@@ -433,39 +433,57 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 				{
 					FbxAnimCurveNode* lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclTranslation, apScene );
 					lpSequences[ a ]->AddMember( lpCurveNode );	
-					FbxAnimCurve* lpCurveT = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], true );
-					FbxAnimCurve* lpCurveR = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], true );
+					lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclRotation, apScene );
+					lpSequences[ a ]->AddMember( lpCurveNode );
+
+					lpMeshNode->SetRotationActive( true );
+					lpMeshNode->setRot
+
+					FbxAnimCurve* lpCurveTX = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "X", true );
+					FbxAnimCurve* lpCurveTY = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Y", true );
+					FbxAnimCurve* lpCurveTZ = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Z", true );
+					FbxAnimCurve* lpCurveRR = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "X", true );
+					FbxAnimCurve* lpCurveRP = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Y", true );
+					FbxAnimCurve* lpCurveRY = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Z", true );
 					
-					lpCurveT->KeyModifyBegin();
 					FbxTime lTime;
 					FbxAnimCurveKey lCurveKey;
+					
+					lpCurveTX->KeyModifyBegin();
+					lpCurveTY->KeyModifyBegin();
+					lpCurveTZ->KeyModifyBegin();
+					lpCurveRY->KeyModifyBegin();
+					lpCurveRP->KeyModifyBegin();
+					lpCurveRR->KeyModifyBegin();
 					for (int k = 0; k < apMotion->sequences[ a ].keyframesCount; k++)
 					{
 						MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ a ].firstKeyframeNumber + k ];
 						lTime.SetSecondDouble( (double)k );
-						lCurveKey.Set( lTime, key->x );
-						lCurveKey.Set( lTime, key->y );
-						lCurveKey.Set( lTime, key->z );
-						lpCurveT->KeyAdd( lTime, lCurveKey );
-					}
-					lpCurveT->KeyModifyEnd();
 
-					lpCurveR->KeyModifyBegin();
-					for (int k = 0; k < apMotion->sequences[ a ].keyframesCount; k++)
-					{
-						MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ a ].firstKeyframeNumber + k ];
-						lTime.SetSecondDouble( (double)k );
+						lCurveKey.Set( lTime, key->x );
+						lpCurveTX->KeyAdd( lTime, lCurveKey );
+						lCurveKey.Set( lTime, key->y );
+						lpCurveTY->KeyAdd( lTime, lCurveKey );
+						lCurveKey.Set( lTime, key->z );
+						lpCurveTZ->KeyAdd( lTime, lCurveKey );
 
 						float roll  = atan2(2*key->qy*key->qw - 2*key->qx*key->qz, 1 - 2*key->qy*key->qy - 2*key->qz*key->qz);
 						float pitch = atan2(2*key->qx*key->qw - 2*key->qy*key->qz, 1 - 2*key->qx*key->qx - 2*key->qz*key->qz);
 						float yaw   = asin(2*key->qx*key->qy + 2*key->qz*key->qw);
 
 						lCurveKey.Set( lTime, roll );
+						lpCurveRR->KeyAdd( lTime, lCurveKey );
 						lCurveKey.Set( lTime, pitch );
+						lpCurveRP->KeyAdd( lTime, lCurveKey );
 						lCurveKey.Set( lTime, yaw );
-						lpCurveR->KeyAdd( lTime, lCurveKey );
+						lpCurveRY->KeyAdd( lTime, lCurveKey );
 					}
-					lpCurveR->KeyModifyEnd();
+					lpCurveTX->KeyModifyEnd();
+					lpCurveTY->KeyModifyEnd();
+					lpCurveTZ->KeyModifyEnd();
+					lpCurveRY->KeyModifyEnd();
+					lpCurveRP->KeyModifyEnd();
+					lpCurveRR->KeyModifyEnd();
 				}
 			}
 	}
