@@ -173,7 +173,7 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
 
-	sprintf( lSource, "..//..//DustResources//levels//%s.gfbx", apFileName);
+	sprintf( lSource, "%s.geometry", apFileName);
 	FILE *lpFile = fopen( lSource, "rb" );
 	fseek( lpFile, 0, SEEK_END );
 	int lFileSize = ftell( lpFile );
@@ -252,7 +252,7 @@ struct MotionKeyframe
 {
 	int number;
 	float x,y,z;
-	float qx,qy,qz,qw;
+	float yaw, pitch, roll;
 };
 
 struct MotionVertex
@@ -301,7 +301,7 @@ void loadMotionMesh( char* apMotionName, MotionMesh* apMesh )
 {
 	char lSource[256];
 
-	sprintf( lSource, "..//..//DustResources//objects//%s_%s.mesh", apMotionName, apMesh->name);
+	sprintf( lSource, "%s_%s.mesh", apMotionName, apMesh->name);
 	FILE *lpFile = fopen( lSource, "rb" );
 	fseek( lpFile, 0, SEEK_END );
 	int lFileSize = ftell( lpFile );
@@ -388,7 +388,8 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 	FbxAnimStack* lpAnimations = FbxAnimStack::Create( apScene, "Sequences" );
 
 	FbxAnimLayer** lpSequences = new FbxAnimLayer*[ apMotion->sequencesCount ];
-	for (int a = 0; a < apMotion->sequencesCount; a++ )
+//	for (int a = 0; a < apMotion->sequencesCount; a++ )
+	int a =0;
 	{
 		char lSequenceName[256]; sprintf( lSequenceName, "seq:%d", a );
 		FbxAnimLayer* lpSequence = FbxAnimLayer::Create( apScene, lSequenceName );
@@ -429,15 +430,13 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 
 				lpSectorNode->AddChild( lpMeshNode );
 				
-				for (int a = 0; a < apMotion->sequencesCount; a++ )
+				//for (int a = 0; a < apMotion->sequencesCount; a++ )
+				int a = 0;
 				{
 					FbxAnimCurveNode* lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclTranslation, apScene );
 					lpSequences[ a ]->AddMember( lpCurveNode );	
 					lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclRotation, apScene );
 					lpSequences[ a ]->AddMember( lpCurveNode );
-
-					lpMeshNode->SetRotationActive( true );
-					lpMeshNode->setRot
 
 					FbxAnimCurve* lpCurveTX = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "X", true );
 					FbxAnimCurve* lpCurveTY = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Y", true );
@@ -467,15 +466,15 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 						lCurveKey.Set( lTime, key->z );
 						lpCurveTZ->KeyAdd( lTime, lCurveKey );
 
-						float roll  = atan2(2*key->qy*key->qw - 2*key->qx*key->qz, 1 - 2*key->qy*key->qy - 2*key->qz*key->qz);
-						float pitch = atan2(2*key->qx*key->qw - 2*key->qy*key->qz, 1 - 2*key->qx*key->qx - 2*key->qz*key->qz);
-						float yaw   = asin(2*key->qx*key->qy + 2*key->qz*key->qw);
+						//float roll  = 0;atan2(2*key->qy*key->qw - 2*key->qx*key->qz, 1 - 2*key->qy*key->qy - 2*key->qz*key->qz);
+						//float pitch = 0;atan2(2*key->qx*key->qw - 2*key->qy*key->qz, 1 - 2*key->qx*key->qx - 2*key->qz*key->qz);
+						//float yaw   = 0;asin(2*key->qx*key->qy + 2*key->qz*key->qw);
 
-						lCurveKey.Set( lTime, roll );
+						lCurveKey.Set( lTime, key->roll );
 						lpCurveRR->KeyAdd( lTime, lCurveKey );
-						lCurveKey.Set( lTime, pitch );
+						lCurveKey.Set( lTime, key->pitch );
 						lpCurveRP->KeyAdd( lTime, lCurveKey );
-						lCurveKey.Set( lTime, yaw );
+						lCurveKey.Set( lTime, key->yaw );
 						lpCurveRY->KeyAdd( lTime, lCurveKey );
 					}
 					lpCurveTX->KeyModifyEnd();
@@ -495,7 +494,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
 
-	sprintf( lSource, "..//..//DustResources//objects//%s.motion", apFileName);
+	sprintf( lSource, "%s.motion", apFileName);
 	FILE *lpFile = fopen( lSource, "rb" );
 	fseek( lpFile, 0, SEEK_END );
 	int lFileSize = ftell( lpFile );
@@ -532,10 +531,9 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 			lMotion.meshes[i].keyframes[j].x = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].y = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].z = readFloat( lpBufferPosition );
-			lMotion.meshes[i].keyframes[j].qx = readFloat( lpBufferPosition );
-			lMotion.meshes[i].keyframes[j].qy = readFloat( lpBufferPosition );
-			lMotion.meshes[i].keyframes[j].qz = readFloat( lpBufferPosition );
-			lMotion.meshes[i].keyframes[j].qw = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].pitch = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].yaw = readFloat( lpBufferPosition );
+			lMotion.meshes[i].keyframes[j].roll = readFloat( lpBufferPosition );
 		}
 		loadMotionMesh( apFileName, lMotion.meshes + i );
 	}
@@ -573,19 +571,19 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//////////////
 	// Konwersja jednego pliku *.gfbx tworzonego przez DustConverter
-	// Pliki Ÿród³owe s¹ szukane w DustResources a efekty dzia³ania s¹ tworzone w DustAssets. 
-	// Tekstury nie s¹ w³¹czane do pliku FBX
+	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustFbx, podkatalog ten musi byæ jako working directory
+	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 	
 	//dustLevel2FBX( lScene, "Anasta1" );
-	//SaveScene( lSdkManager, lScene, "..//..//DustAssets//levels//Anasta1.fbx",-1,false);
+	//SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta1.fbx",-1,false);
 
 	///////////////
 	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
-	// Pliki Ÿród³owe s¹ szukane w DustResources a efekty dzia³ania s¹ tworzone w DustAssets. 
-	// Tekstury nie s¹ w³¹czane do pliku FBX.
-	
-	dustMotion2FBX( lScene, "autogun" );
-	SaveScene( lSdkManager, lScene, "autogun.fbx", -1, false );
+	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustFbx, podkatalog ten musi byæ jako working directory
+	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
+
+	dustMotion2FBX( lScene, "nomad" );
+	SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//nomad.fbx", -1, true );
 
     DestroySdkObjects(lSdkManager, lResult);
 
