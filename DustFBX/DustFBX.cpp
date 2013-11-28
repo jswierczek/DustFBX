@@ -385,21 +385,31 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 	FbxNode* lpSectorNode = FbxNode::Create( apScene, lName );
 	apScene->GetRootNode()->AddChild( lpSectorNode );
 	
-	FbxAnimStack* lpAnimations = FbxAnimStack::Create( apScene, "Sequences" );
+	//FbxAnimStack* lpAnimations = FbxAnimStack::Create( apScene, "Sequences" );
 
 	FbxAnimLayer** lpSequences = new FbxAnimLayer*[ apMotion->sequencesCount ];
-//	for (int a = 0; a < apMotion->sequencesCount; a++ )
-	int a =0;
+	/*
+	//	for (int a = 0; a < apMotion->sequencesCount; a++ )
+	int a = 2;
 	{
 		char lSequenceName[256]; sprintf( lSequenceName, "seq:%d", a );
 		FbxAnimLayer* lpSequence = FbxAnimLayer::Create( apScene, lSequenceName );
 		lpAnimations->AddMember( lpSequence );
 		lpSequences[ a ] = lpSequence;
-	}
+
+		FbxAnimCurveNode* lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpSectorNode->LclTranslation, apScene );
+		lpSequences[ a ]->AddMember( lpCurveNode );	
+		lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpSectorNode->LclRotation, apScene );
+		lpSequences[ a ]->AddMember( lpCurveNode );
+	}*/
 
 	for (int m = 0; m < apMotion->meshesCount; m++ )
 	{
 		if ( apMotion->meshes[ m ].visible )
+		{
+			FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
+			lpSectorNode->AddChild( lpMeshNode );
+
 			for ( int sm = 0; sm < apMotion->meshes[ m ].submeshesCount; sm++ )
 			{
 				char lMaterial[ 256 ];
@@ -414,77 +424,94 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 				FbxString lTextureName = lMaterial;
 				sprintf( lName, "msh:%s.%d", apMotion->meshes[ m ].name, sm );
 		
-				FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
+				FbxNode* lpSubmeshNode = FbxNode::Create( apScene, lName );
 				FbxMesh* lpMesh = FbxMesh::Create( apScene, lName );
 				FbxSurfaceLambert* lpMaterial = FbxSurfaceLambert::Create( apScene, lMaterialName.Buffer());
 				FbxFileTexture* lpTexture = FbxFileTexture::Create(apScene,lTextureName.Buffer());
 		
-				lpMeshNode->AddMaterial(lpMaterial);
-				lpMeshNode->SetNodeAttribute( lpMesh );
-				lpMeshNode->SetShadingMode( FbxNode::eTextureShading );
+				lpSubmeshNode->AddMaterial(lpMaterial);
+				lpSubmeshNode->SetNodeAttribute( lpMesh );
+				lpSubmeshNode->SetShadingMode( FbxNode::eTextureShading );
 				lpMaterial->Diffuse.ConnectSrcObject(lpTexture);
 
 				setupMotionMeshGeometry( lpMesh, &apMotion->meshes[ m ].submeshes[ sm ] );
 				setupFbxMeshMaterial( lpMaterial, lpMesh, lMaterialName );
 				setupFbxMeshTexture( lpTexture, lTextureName );
 
-				lpSectorNode->AddChild( lpMeshNode );
-				
-				//for (int a = 0; a < apMotion->sequencesCount; a++ )
-				int a = 0;
-				{
-					FbxAnimCurveNode* lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclTranslation, apScene );
-					lpSequences[ a ]->AddMember( lpCurveNode );	
-					lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpMeshNode->LclRotation, apScene );
-					lpSequences[ a ]->AddMember( lpCurveNode );
-
-					FbxAnimCurve* lpCurveTX = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "X", true );
-					FbxAnimCurve* lpCurveTY = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Y", true );
-					FbxAnimCurve* lpCurveTZ = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Z", true );
-					FbxAnimCurve* lpCurveRR = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "X", true );
-					FbxAnimCurve* lpCurveRP = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Y", true );
-					FbxAnimCurve* lpCurveRY = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Z", true );
-					
-					FbxTime lTime;
-					FbxAnimCurveKey lCurveKey;
-					
-					lpCurveTX->KeyModifyBegin();
-					lpCurveTY->KeyModifyBegin();
-					lpCurveTZ->KeyModifyBegin();
-					lpCurveRY->KeyModifyBegin();
-					lpCurveRP->KeyModifyBegin();
-					lpCurveRR->KeyModifyBegin();
-					for (int k = 0; k < apMotion->sequences[ a ].keyframesCount; k++)
-					{
-						MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ a ].firstKeyframeNumber + k ];
-						lTime.SetSecondDouble( (double)k );
-
-						lCurveKey.Set( lTime, key->x );
-						lpCurveTX->KeyAdd( lTime, lCurveKey );
-						lCurveKey.Set( lTime, key->y );
-						lpCurveTY->KeyAdd( lTime, lCurveKey );
-						lCurveKey.Set( lTime, key->z );
-						lpCurveTZ->KeyAdd( lTime, lCurveKey );
-
-						//float roll  = 0;atan2(2*key->qy*key->qw - 2*key->qx*key->qz, 1 - 2*key->qy*key->qy - 2*key->qz*key->qz);
-						//float pitch = 0;atan2(2*key->qx*key->qw - 2*key->qy*key->qz, 1 - 2*key->qx*key->qx - 2*key->qz*key->qz);
-						//float yaw   = 0;asin(2*key->qx*key->qy + 2*key->qz*key->qw);
-
-						lCurveKey.Set( lTime, key->roll );
-						lpCurveRR->KeyAdd( lTime, lCurveKey );
-						lCurveKey.Set( lTime, key->pitch );
-						lpCurveRP->KeyAdd( lTime, lCurveKey );
-						lCurveKey.Set( lTime, key->yaw );
-						lpCurveRY->KeyAdd( lTime, lCurveKey );
-					}
-					lpCurveTX->KeyModifyEnd();
-					lpCurveTY->KeyModifyEnd();
-					lpCurveTZ->KeyModifyEnd();
-					lpCurveRY->KeyModifyEnd();
-					lpCurveRP->KeyModifyEnd();
-					lpCurveRR->KeyModifyEnd();
-				}
+				lpMeshNode->AddChild( lpSubmeshNode );
 			}
+				
+			if ( apMotion->sequences[ 0 ].keyframesCount > 0 )
+			{
+				MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ 0 ].firstKeyframeNumber + 0 ];
+				FbxDouble3 lT, lR;
+				lT[0] = key->x;
+				lT[1] = key->y;
+				lT[2] = key->z;
+				lR[0] = key->pitch * 180.0 / 3.14;
+				lR[1] = key->yaw * 180.0 / 3.14;
+				lR[2] = key->roll * 180.0 / 3.14;
+				lpMeshNode->LclTranslation.Set( lT );
+				lpMeshNode->LclRotation.Set( lR );
+			}
+			/*
+			//for (int a = 0; a < apMotion->sequencesCount; a++ )
+			int a = 2;
+			{
+
+				FbxAnimCurve* lpCurveTX = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "X", true );
+				FbxAnimCurve* lpCurveTY = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Y", true );
+				FbxAnimCurve* lpCurveTZ = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Z", true );
+				FbxAnimCurve* lpCurveRP = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "X", true );
+				FbxAnimCurve* lpCurveRY = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Y", true );
+				FbxAnimCurve* lpCurveRR = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Z", true );
+					
+				FbxTime lTime;
+				FbxAnimCurveKey lCurveKey;
+
+				lpCurveTX->KeyModifyBegin();
+				lpCurveTY->KeyModifyBegin();
+				lpCurveTZ->KeyModifyBegin();
+				lpCurveRY->KeyModifyBegin();
+				lpCurveRP->KeyModifyBegin();
+				lpCurveRR->KeyModifyBegin();
+				for (int k = 0; k < apMotion->sequences[ a ].keyframesCount; k++)
+				{
+					MotionKeyframe *key = &apMotion->meshes[ m ].keyframes[ apMotion->sequences[ a ].firstKeyframeNumber + k ];
+					lTime.SetSecondDouble( (double)k/10 );
+
+					lCurveKey.Set( lTime, key->x );
+					int idx = lpCurveTX->KeyAdd( lTime, lCurveKey );
+					lpCurveTX->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
+
+					lCurveKey.Set( lTime, key->y );
+					idx = lpCurveTY->KeyAdd( lTime, lCurveKey );
+					lpCurveTY->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
+						
+					lCurveKey.Set( lTime, key->z );
+					idx = lpCurveTZ->KeyAdd( lTime, lCurveKey );
+					lpCurveTZ->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
+
+					lCurveKey.Set( lTime, key->roll * 180.0f / 3.14f );
+					idx = lpCurveRR->KeyAdd( lTime, lCurveKey );
+					lpCurveRR->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
+						
+					lCurveKey.Set( lTime, key->pitch * 180.0f / 3.14f);
+					idx = lpCurveRP->KeyAdd( lTime, lCurveKey );
+					lpCurveRP->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
+
+					lCurveKey.Set( lTime, key->yaw * 180.0f / 3.14f);
+					idx = lpCurveRY->KeyAdd( lTime, lCurveKey );
+					lpCurveRY->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
+				}
+				lpCurveTX->KeyModifyEnd();
+				lpCurveTY->KeyModifyEnd();
+				lpCurveTZ->KeyModifyEnd();
+				lpCurveRY->KeyModifyEnd();
+				lpCurveRP->KeyModifyEnd();
+				lpCurveRR->KeyModifyEnd();
+			}*/
+		}
 	}
 
 	delete lpSequences;
@@ -571,7 +598,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//////////////
 	// Konwersja jednego pliku *.gfbx tworzonego przez DustConverter
-	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustFbx, podkatalog ten musi byæ jako working directory
+	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 	
 	//dustLevel2FBX( lScene, "Anasta1" );
@@ -579,11 +606,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	///////////////
 	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
-	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustFbx, podkatalog ten musi byæ jako working directory
+	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 
-	dustMotion2FBX( lScene, "nomad" );
-	SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//nomad.fbx", -1, true );
+	dustMotion2FBX( lScene, "TECH2" );
+	SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//TECH2.fbx", -1, true );
 
     DestroySdkObjects(lSdkManager, lResult);
 
