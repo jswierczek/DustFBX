@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "fbx.h"
+#include <math.h>
 
 int readInt( unsigned char* &apBuffer )
 {
@@ -385,23 +386,21 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 	FbxNode* lpSectorNode = FbxNode::Create( apScene, lName );
 	apScene->GetRootNode()->AddChild( lpSectorNode );
 	
-	//FbxAnimStack* lpAnimations = FbxAnimStack::Create( apScene, "Sequences" );
-
-	FbxAnimLayer** lpSequences = new FbxAnimLayer*[ apMotion->sequencesCount ];
-	/*
-	//	for (int a = 0; a < apMotion->sequencesCount; a++ )
-	int a = 2;
+	FbxAnimStack** lpAnimations = new FbxAnimStack*[ apMotion->sequencesCount ];
+	
+	for (int a = 0; a < apMotion->sequencesCount; a++ )
+	//int a = 1;
 	{
 		char lSequenceName[256]; sprintf( lSequenceName, "seq:%d", a );
-		FbxAnimLayer* lpSequence = FbxAnimLayer::Create( apScene, lSequenceName );
-		lpAnimations->AddMember( lpSequence );
-		lpSequences[ a ] = lpSequence;
+		lpAnimations[ a ] = FbxAnimStack::Create( apScene, lSequenceName );
+		FbxAnimLayer* lpLayer = FbxAnimLayer::Create( apScene, "base" );
+		lpAnimations[ a ]->AddMember( lpLayer );
 
 		FbxAnimCurveNode* lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpSectorNode->LclTranslation, apScene );
-		lpSequences[ a ]->AddMember( lpCurveNode );	
+		lpLayer->AddMember( lpCurveNode );	
 		lpCurveNode = FbxAnimCurveNode::CreateTypedCurveNode( lpSectorNode->LclRotation, apScene );
-		lpSequences[ a ]->AddMember( lpCurveNode );
-	}*/
+		lpLayer->AddMember( lpCurveNode );
+	}
 
 	for (int m = 0; m < apMotion->meshesCount; m++ )
 	{
@@ -454,17 +453,18 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 				lpMeshNode->LclTranslation.Set( lT );
 				lpMeshNode->LclRotation.Set( lR );
 			}
-			/*
-			//for (int a = 0; a < apMotion->sequencesCount; a++ )
-			int a = 2;
+			
+			for (int a = 0; a < apMotion->sequencesCount; a++ )
+			//int a = 1;
 			{
+				FbxAnimLayer* lpLayer = (FbxAnimLayer*)lpAnimations[ a ]->GetMember( 0 );
 
-				FbxAnimCurve* lpCurveTX = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "X", true );
-				FbxAnimCurve* lpCurveTY = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Y", true );
-				FbxAnimCurve* lpCurveTZ = lpMeshNode->LclTranslation.GetCurve( lpSequences[ a ], "Z", true );
-				FbxAnimCurve* lpCurveRP = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "X", true );
-				FbxAnimCurve* lpCurveRY = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Y", true );
-				FbxAnimCurve* lpCurveRR = lpMeshNode->LclRotation.GetCurve( lpSequences[ a], "Z", true );
+				FbxAnimCurve* lpCurveTX = lpMeshNode->LclTranslation.GetCurve( lpLayer, "X", true );
+				FbxAnimCurve* lpCurveTY = lpMeshNode->LclTranslation.GetCurve( lpLayer, "Y", true );
+				FbxAnimCurve* lpCurveTZ = lpMeshNode->LclTranslation.GetCurve( lpLayer, "Z", true );
+				FbxAnimCurve* lpCurveRP = lpMeshNode->LclRotation.GetCurve( lpLayer, "X", true );
+				FbxAnimCurve* lpCurveRY = lpMeshNode->LclRotation.GetCurve( lpLayer, "Y", true );
+				FbxAnimCurve* lpCurveRR = lpMeshNode->LclRotation.GetCurve( lpLayer, "Z", true );
 					
 				FbxTime lTime;
 				FbxAnimCurveKey lCurveKey;
@@ -492,15 +492,15 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 					idx = lpCurveTZ->KeyAdd( lTime, lCurveKey );
 					lpCurveTZ->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
 
-					lCurveKey.Set( lTime, key->roll * 180.0f / 3.14f );
+					lCurveKey.Set( lTime, key->roll * 180.0f / 3.1415927f );
 					idx = lpCurveRR->KeyAdd( lTime, lCurveKey );
 					lpCurveRR->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
 						
-					lCurveKey.Set( lTime, key->pitch * 180.0f / 3.14f);
+					lCurveKey.Set( lTime, key->pitch * 180.0f / 3.1415927f );
 					idx = lpCurveRP->KeyAdd( lTime, lCurveKey );
 					lpCurveRP->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
 
-					lCurveKey.Set( lTime, key->yaw * 180.0f / 3.14f);
+					lCurveKey.Set( lTime, key->yaw * 180.0f / 3.1415927f );
 					idx = lpCurveRY->KeyAdd( lTime, lCurveKey );
 					lpCurveRY->KeySetInterpolation( idx, FbxAnimCurveDef::eInterpolationConstant );	
 				}
@@ -509,12 +509,12 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 				lpCurveTZ->KeyModifyEnd();
 				lpCurveRY->KeyModifyEnd();
 				lpCurveRP->KeyModifyEnd();
-				lpCurveRR->KeyModifyEnd();
-			}*/
+				lpCurveRR->KeyModifyEnd();				
+			}
 		}
 	}
 
-	delete lpSequences;
+	delete lpAnimations;
 }
 
 void dustMotion2FBX( FbxScene* apScene, char* apFileName )
@@ -594,25 +594,33 @@ int _tmain(int argc, _TCHAR* argv[])
     FbxScene* lScene = NULL;
     bool lResult = false;
 
-    InitializeSdkObjects(lSdkManager, lScene);
 
 	//////////////
 	// Konwersja jednego pliku *.gfbx tworzonego przez DustConverter
 	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 	
+    //InitializeSdkObjects(lSdkManager, lScene);
 	//dustLevel2FBX( lScene, "Anasta1" );
 	//SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta1.fbx",-1,false);
+    //DestroySdkObjects(lSdkManager, lResult);
 
 	///////////////
 	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
 	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 
-	dustMotion2FBX( lScene, "TECH2" );
-	SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//TECH2.fbx", -1, true );
+	char* lMotion[] = { "TECH2", "nomad", "GUS" };
 
-    DestroySdkObjects(lSdkManager, lResult);
+	for (int i = 0; i < 3; i ++ )
+	{
+	    InitializeSdkObjects(lSdkManager, lScene);
+		dustMotion2FBX( lScene, lMotion[ i ] );
+		char out[256];
+		sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lMotion[i]);
+		SaveScene( lSdkManager, lScene,out, -1, true );
+	    DestroySdkObjects(lSdkManager, lResult);
+	}
 
 	return 0;
 }
