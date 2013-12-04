@@ -89,6 +89,7 @@ struct SectorMesh
 {
 	int id;
 	char* textureName;
+	int texturesCount;
 	int verticesCount;
 	Vertex* vertices;
 	int indicesCount;
@@ -199,6 +200,7 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 		{
 			lpMeshes[ m ].id = readInt( lpBufferPosition );
 			lpMeshes[ m ].textureName = readString( lpBufferPosition );
+			lpMeshes[ m ].texturesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].verticesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].indicesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].vertices = new Vertex[ lpMeshes[ m ].verticesCount ];
@@ -586,6 +588,8 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	bool lLevel = true;
+
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
     bool lResult = false;
@@ -596,10 +600,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 	
-    //InitializeSdkObjects(lSdkManager, lScene);
-	//dustLevel2FBX( lScene, "Anasta1" );
-	//SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta1.fbx",-1,false);
-    //DestroySdkObjects(lSdkManager, lResult);
+	if ( lLevel )
+	{
+		InitializeSdkObjects(lSdkManager, lScene);
+		dustLevel2FBX( lScene, "Anasta1" );
+		SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta1.fbx",-1, false);
+		DestroySdkObjects(lSdkManager, lResult);
+	}
 
 	///////////////
 	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
@@ -608,15 +615,16 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	char* lMotion[] = { "TECH2", "nomad", "GUS" };
 
-	for (int i = 0; i < 3; i ++ )
-	{
-	    InitializeSdkObjects(lSdkManager, lScene);
-		dustMotion2FBX( lScene, lMotion[ i ] );
-		char out[256];
-		sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lMotion[i]);
-		SaveScene( lSdkManager, lScene,out, -1, true );
-	    DestroySdkObjects(lSdkManager, lResult);
-	}
+	if ( !lLevel )
+		for (int i = 0; i < 3; i ++ )
+		{
+			InitializeSdkObjects(lSdkManager, lScene);
+			dustMotion2FBX( lScene, lMotion[ i ] );
+			char out[256];
+			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lMotion[i]);
+			SaveScene( lSdkManager, lScene,out, -1, true );
+			DestroySdkObjects(lSdkManager, lResult);
+		}
 
 	return 0;
 }
