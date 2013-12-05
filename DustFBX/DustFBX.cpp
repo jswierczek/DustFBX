@@ -153,6 +153,10 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 		FbxString lTextureName = apSector->meshes[ m ].textureName;
 		sprintf( lName, "msh:%d", apSector->meshes[ m ].id );
 		
+		lTextureName.Append(".png",4);
+		lMaterialName.Append(".png",4);
+		char *c = lTextureName.Buffer();
+
 		FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
 		FbxMesh* lpMesh = FbxMesh::Create( apScene, lName );
 		FbxSurfaceLambert* lpMaterial = FbxSurfaceLambert::Create( apScene, lMaterialName.Buffer());
