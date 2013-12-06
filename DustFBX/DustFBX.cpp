@@ -90,6 +90,8 @@ struct SectorMesh
 	int id;
 	char* textureName;
 	int textureFramesCount;
+	char* textureName2;
+	int textureFramesCount2;	
 	int transparent;
 	int verticesCount;
 	Vertex* vertices;
@@ -152,8 +154,11 @@ void createSectorNode( FbxScene* apScene, Sector* apSector )
 	{
 		FbxString lMaterialName = apSector->meshes[ m ].textureName;
 		FbxString lTextureName = apSector->meshes[ m ].textureName;
-		sprintf( lName, "msh:%d,%d,%d", apSector->meshes[ m ].id, apSector->meshes[ m ].textureFramesCount, apSector->meshes[ m ].transparent );
-		
+		if ( strcmp( apSector->meshes[ m ].textureName2, "" ) == 0 )
+			sprintf( lName, "msh:%d,%d,%d", apSector->meshes[ m ].id, apSector->meshes[ m ].textureFramesCount, apSector->meshes[ m ].transparent );
+		else
+			sprintf( lName, "msh:%d,%d,%d[%s:%d]", apSector->meshes[ m ].id, apSector->meshes[ m ].textureFramesCount, apSector->meshes[ m ].transparent, apSector->meshes[ m ].textureName2, apSector->meshes[ m ].textureFramesCount );
+
 		lTextureName.Append(".png",4);
 
 		FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
@@ -203,7 +208,9 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 		{
 			lpMeshes[ m ].id = readInt( lpBufferPosition );
 			lpMeshes[ m ].textureName = readString( lpBufferPosition );
+			lpMeshes[ m ].textureName2 = readString( lpBufferPosition );
 			lpMeshes[ m ].textureFramesCount = readInt( lpBufferPosition );
+			lpMeshes[ m ].textureFramesCount2 = readInt( lpBufferPosition );
 			lpMeshes[ m ].transparent = readInt( lpBufferPosition );
 			lpMeshes[ m ].verticesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].indicesCount = readInt( lpBufferPosition );
