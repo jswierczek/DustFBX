@@ -614,8 +614,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	if ( lLevel )
 	{
 		InitializeSdkObjects(lSdkManager, lScene);
-		dustLevel2FBX( lScene, "Anasta1" );
-		SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta1.fbx",-1, false);
+		dustLevel2FBX( lScene, "Anasta2" );
+		SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta2.fbx",-1, false);
 		DestroySdkObjects(lSdkManager, lResult);
 	}
 
