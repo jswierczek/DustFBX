@@ -159,7 +159,7 @@ void createSectorNode( FbxScene* apScene, Sector* apSector, FILE* apTagsFile )
 		lTextureName.Append(".png",4);
 			
 		char tag[256];
-		sprintf( tag, "msh:%s-I%08d,A%02d",lName,apSector->meshes[ m ].id,apSector->meshes[ m ].texture1FramesCount );
+		sprintf( tag, "msh:%s-I%05d,A%02d",lName,apSector->meshes[ m ].id,apSector->meshes[ m ].texture1FramesCount );
 		if ( apSector->meshes[m].transparent)
 			strcat( tag, ",T");
 		if ( apSector->meshes[m].texture2FramesCount > 0 )
