@@ -89,9 +89,10 @@ struct SectorMesh
 {
 	int id;
 	char* textureName;
-	int textureFramesCount;	
+	int texture1FramesCount;	
+	int texture2FramesCount;
 	int transparent;
-	int secondTexture;
+	int type;
 	int verticesCount;
 	Vertex* vertices;
 	int indicesCount;
@@ -142,28 +143,36 @@ void setupSectorMeshGeometry( FbxMesh* apDst, SectorMesh* apSrc )
 	}
 }
 
-void createSectorNode( FbxScene* apScene, Sector* apSector )
+void createSectorNode( FbxScene* apScene, Sector* apSector, FILE* apTagsFile )
 {
 	char lName[256];
 	sprintf( lName, "sec:%d", apSector->id );
 	FbxNode* lpSectorNode = FbxNode::Create( apScene, lName );
 	apScene->GetRootNode()->AddChild( lpSectorNode );
-	
+	static int meshid = 0;
 	for (int m = 0; m < apSector->meshesCount; m++ )
 	{
+		sprintf( lName, "msh:%d", meshid++ );
+		
 		FbxString lMaterialName = apSector->meshes[ m ].textureName;
 		FbxString lTextureName = apSector->meshes[ m ].textureName;
-		char tag[256];
-		sprintf( tag, "[%d,A%02d", apSector->meshes[ m ].id,apSector->meshes[ m ].textureFramesCount );
-		if ( apSector->meshes[m].transparent)
-			strcat( tag, ",#");
-		if ( apSector->meshes[m].secondTexture )
-			strcat( tag, ",@" );
-		strcat( tag, "]");
 		lTextureName.Append(".png",4);
-
-		FbxNode* lpMeshNode = FbxNode::Create( apScene, tag );
-		FbxMesh* lpMesh = FbxMesh::Create( apScene, tag );
+			
+		char tag[256];
+		sprintf( tag, "msh:%s-I%08d,A%02d",lName,apSector->meshes[ m ].id,apSector->meshes[ m ].texture1FramesCount );
+		if ( apSector->meshes[m].transparent)
+			strcat( tag, ",T");
+		if ( apSector->meshes[m].texture2FramesCount > 0 )
+		{
+			char tag2[256];
+			sprintf( tag2, ",S%02d", apSector->meshes[m].texture2FramesCount );
+			strcat( tag, tag2 );
+		}
+		strcat( tag, "\n");
+		fputs( tag, apTagsFile );
+		
+		FbxNode* lpMeshNode = FbxNode::Create( apScene, lName );
+		FbxMesh* lpMesh = FbxMesh::Create( apScene, lName );
 		FbxSurfaceLambert* lpMaterial = FbxSurfaceLambert::Create( apScene, lMaterialName.Buffer());
 		FbxFileTexture* lpTexture = FbxFileTexture::Create(apScene,lTextureName.Buffer());
 		
@@ -209,9 +218,10 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 		{
 			lpMeshes[ m ].id = readInt( lpBufferPosition );
 			lpMeshes[ m ].textureName = readString( lpBufferPosition );
-			lpMeshes[ m ].textureFramesCount = readInt( lpBufferPosition );
+			lpMeshes[ m ].texture1FramesCount = readInt( lpBufferPosition );
+			lpMeshes[ m ].texture2FramesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].transparent = readInt( lpBufferPosition );
-			lpMeshes[ m ].secondTexture = readInt( lpBufferPosition );
+			lpMeshes[ m ].type = readInt( lpBufferPosition );
 			lpMeshes[ m ].verticesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].indicesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].vertices = new Vertex[ lpMeshes[ m ].verticesCount ];
@@ -235,9 +245,13 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 
 	//////
 	// fbx creation
+	char lTagsFileName[256];
+	sprintf( lTagsFileName, "%s.tag", apFileName );
+	FILE* lpTagsFile = fopen( lTagsFileName, "w" );
 	for(int s = 0; s < lSectorsCount; s++ )
 		if ( lpSectors[ s ].meshesCount > 0 )
-			createSectorNode( apScene, lpSectors + s );
+			createSectorNode( apScene, lpSectors + s, lpTagsFile );
+	fclose( lpTagsFile);
 	//////
 
 	for (int s = 0; s < lSectorsCount; s++)
@@ -611,12 +625,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
 	
+	char* lLevels[] = { 
+                        "ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
+                        "PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
+                        "KANYON", "WALKIRIE", "OUTRO" };
 	if ( lLevel )
 	{
-		InitializeSdkObjects(lSdkManager, lScene);
-		dustLevel2FBX( lScene, "Anasta2" );
-		SaveScene( lSdkManager, lScene, "..//..//DustUnity//Assets//Anasta2.fbx",-1, false);
-		DestroySdkObjects(lSdkManager, lResult);
+		for (int i = 0; i < 19; i++ )
+		{
+			InitializeSdkObjects(lSdkManager, lScene);
+			dustLevel2FBX( lScene, "Anasta1" );
+			char out[256];
+			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lLevels[i]);
+			SaveScene( lSdkManager, lScene, out,-1, false);
+			DestroySdkObjects(lSdkManager, lResult);
+		}
 	}
 
 	///////////////
