@@ -631,10 +631,10 @@ int _tmain(int argc, _TCHAR* argv[])
                         "KANYON", "WALKIRIE", "OUTRO" };
 	if ( lLevel )
 	{
-		for (int i = 0; i < 19; i++ )
+		for (int i = 0; i < 18; i++ )
 		{
 			InitializeSdkObjects(lSdkManager, lScene);
-			dustLevel2FBX( lScene, "Anasta1" );
+			dustLevel2FBX( lScene, lLevels[i] );
 			char out[256];
 			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lLevels[i]);
 			SaveScene( lSdkManager, lScene, out,-1, false);
