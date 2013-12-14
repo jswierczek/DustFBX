@@ -4,6 +4,46 @@
 #include "stdafx.h"
 #include "fbx.h"
 #include <math.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <tchar.h> 
+#include <stdio.h>
+#include <strsafe.h>
+#pragma comment(lib, "User32.lib")
+
+/////////
+char** findMotions(int &aFilesCount)
+{
+   WIN32_FIND_DATA ffd;
+   LARGE_INTEGER filesize;
+   TCHAR szDir[MAX_PATH];
+   size_t length_of_arg;
+   HANDLE hFind = INVALID_HANDLE_VALUE;
+   DWORD dwError=0;
+
+   StringCchCopy(szDir, MAX_PATH, TEXT("..\\..\\DustResources\\fbx\\*.motion"));
+
+   hFind = FindFirstFile(szDir, &ffd);
+   
+   aFilesCount = 0;
+   char** lFiles = new char*[1024];
+
+   if ( hFind != INVALID_HANDLE_VALUE )
+   {
+	   do
+	   {
+		   lFiles[aFilesCount] = new char[256];
+		   wcstombs(lFiles[aFilesCount],ffd.cFileName,255);
+		   aFilesCount++;
+	   }
+	   while (FindNextFile(hFind, &ffd) != 0);
+
+	   FindClose(hFind);
+   }
+   return lFiles;
+}
+
+/////////
 
 int readInt( unsigned char* &apBuffer )
 {
@@ -159,7 +199,7 @@ void createSectorNode( FbxScene* apScene, Sector* apSector, FILE* apTagsFile )
 		lTextureName.Append(".png",4);
 			
 		char tag[256];
-		sprintf( tag, "msh:%s-I%05d,A%02d",lName,apSector->meshes[ m ].id,apSector->meshes[ m ].texture1FramesCount );
+		sprintf( tag, "%s-I%05d,A%02d",lName,apSector->meshes[ m ].id,apSector->meshes[ m ].texture1FramesCount );
 		if ( apSector->meshes[m].transparent)
 			strcat( tag, ",T");
 		if ( apSector->meshes[m].texture2FramesCount > 0 )
@@ -328,8 +368,11 @@ struct Motion
 void loadMotionMesh( char* apMotionName, MotionMesh* apMesh )
 {
 	char lSource[256];
+	char lTmp[256];
+	strcpy( lTmp, apMotionName );
+	strrchr( lTmp, '.')[0] = 0;
 
-	sprintf( lSource, "%s_%s.mesh", apMotionName, apMesh->name);
+	sprintf( lSource, "%s_%s.mesh", lTmp, apMesh->name);
 	FILE *lpFile = fopen( lSource, "rb" );
 	fseek( lpFile, 0, SEEK_END );
 	int lFileSize = ftell( lpFile );
@@ -544,7 +587,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
 
-	sprintf( lSource, "%s.motion", apFileName);
+	sprintf( lSource, "%s", apFileName);
 	FILE *lpFile = fopen( lSource, "rb" );
 	fseek( lpFile, 0, SEEK_END );
 	int lFileSize = ftell( lpFile );
@@ -613,7 +656,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	bool lLevel = true;
+	bool lLevel = false;
 
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
@@ -646,20 +689,26 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
 	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
 	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
-
-	char* lMotion[] = { "TECH2", "nomad", "GUS" };
+	
 
 	if ( !lLevel )
-		for (int i = 0; i < 3; i ++ )
+	{
+		int lMotionsCount;
+		char** lMotions = findMotions(lMotionsCount);
+		
+		for (int i = 0; i < lMotionsCount; i ++ )
 		{
 			InitializeSdkObjects(lSdkManager, lScene);
-			dustMotion2FBX( lScene, lMotion[ i ] );
+			dustMotion2FBX( lScene, lMotions[ i ] );
 			char out[256];
-			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lMotion[i]);
+			char tmp[256];
+			strcpy( tmp, lMotions[i] );
+			strrchr( tmp, '.')[0] = 0;
+			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", tmp);
 			SaveScene( lSdkManager, lScene,out, -1, true );
 			DestroySdkObjects(lSdkManager, lResult);
 		}
-
+	}
 	return 0;
 }
 
