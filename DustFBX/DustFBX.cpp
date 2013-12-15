@@ -672,7 +672,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	bool lLevel = true;
+	bool lLevel = false;
 
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
