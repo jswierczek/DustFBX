@@ -229,6 +229,12 @@ void createSectorNode( FbxScene* apScene, Sector* apSector, FILE* apTagsFile )
 	}
 }
 
+//////////////
+// Konwersja jednego pliku *.gfbx tworzonego przez DustConverter
+// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
+// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
+// Plik FBX zawiera tylko geometriê - bez tekstur
+	
 void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
@@ -286,7 +292,7 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 	//////
 	// fbx creation
 	char lTagsFileName[256];
-	sprintf( lTagsFileName, "%s.tag", apFileName );
+	sprintf( lTagsFileName, "..//..//DustUnity//Assets//tmp//%s.tag", apFileName );
 	FILE* lpTagsFile = fopen( lTagsFileName, "w" );
 	for(int s = 0; s < lSectorsCount; s++ )
 		if ( lpSectors[ s ].meshesCount > 0 )
@@ -583,6 +589,12 @@ void createMotionMeshNode( FbxScene* apScene, Motion* apMotion )
 	delete lpAnimations;
 }
 
+///////////////
+// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonych przez DustConverter
+// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
+// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
+// Plik FBX zawiera tekstury, geometriê i animacje
+	
 void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 {
 	char lSource[256];
@@ -610,6 +622,10 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 		lMotion.sequences[ i ].firstKeyframeNumber = readInt( lpBufferPosition );
 		lMotion.sequences[ i ].keyframesCount = readInt( lpBufferPosition );
 	}
+
+	if ( lMotion.sequencesCount == 1 )
+		if ( lMotion.sequences[0].keyframesCount == 0)
+			lMotion.sequences[0].keyframesCount = lMotion.keyframesCount;
 
 	lMotion.meshes = new MotionMesh[ lMotion.meshesCount ];
 	for ( int i = 0; i < lMotion.meshesCount; i++ )
@@ -656,40 +672,29 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	bool lLevel = false;
+	bool lLevel = true;
 
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
     bool lResult = false;
 
-
-	//////////////
-	// Konwersja jednego pliku *.gfbx tworzonego przez DustConverter
-	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
-	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
-	
-	char* lLevels[] = { 
-                        "ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
-                        "PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
-                        "KANYON", "WALKIRIE", "OUTRO" };
+	int lLevelsCount = 1 ;//18;
+	char* lLevels[] = { "ANASTA1" };
+                        //"ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
+                        //"PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
+                        //"KANYON", "WALKIRIE", "OUTRO" };
 	if ( lLevel )
 	{
-		for (int i = 0; i < 18; i++ )
+		for (int i = 0; i < lLevelsCount; i++ )
 		{
 			InitializeSdkObjects(lSdkManager, lScene);
 			dustLevel2FBX( lScene, lLevels[i] );
 			char out[256];
-			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", lLevels[i]);
+			sprintf( out, "..//..//DustUnity//Assets//Levels//%s.fbx", lLevels[i]);
 			SaveScene( lSdkManager, lScene, out,-1, false);
 			DestroySdkObjects(lSdkManager, lResult);
 		}
 	}
-
-	///////////////
-	// Konwersja jednego pliku *.motion wraz zale¿nymi plikami *.mesh tworzonego przez DustConverter
-	// Pliki Ÿród³owe s¹ szukane podkatalogu fbx katalogu DustResources, podkatalog ten musi byæ jako working directory
-	// Pliki docelowe tworzone s¹ w katalogu DustUnity//Assets
-	
 
 	if ( !lLevel )
 	{
@@ -704,7 +709,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			char tmp[256];
 			strcpy( tmp, lMotions[i] );
 			strrchr( tmp, '.')[0] = 0;
-			sprintf( out, "..//..//DustUnity//Assets//%s.fbx", tmp);
+			sprintf( out, "..//..//DustUnity//Assets//Objects//%s.fbx", tmp);
 			SaveScene( lSdkManager, lScene,out, -1, true );
 			DestroySdkObjects(lSdkManager, lResult);
 		}
