@@ -324,7 +324,7 @@ struct MotionSequence
 
 struct MotionKeyframe
 {
-	int number;
+	//int number;
 	float x,y,z;
 	float yaw, pitch, roll;
 };
@@ -353,7 +353,7 @@ struct MotionSubmesh
 struct MotionMesh
 {
 	int visible;
-	int type;
+	//int type;
 	char* name;
 	int submeshesCount;
 	MotionSubmesh* submeshes;
@@ -363,7 +363,7 @@ struct MotionMesh
 struct Motion
 {
 	int meshesCount;
-	int lightframesCount;
+	//int lightframesCount;
 	int keyframesCount;
 	int sequencesCount;
 	char* name;
@@ -613,7 +613,7 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 	lMotion.name = new char[ strlen( apFileName ) + 1 ]; strcpy( lMotion.name, apFileName );
 	lMotion.meshesCount = readInt( lpBufferPosition );
 	lMotion.keyframesCount = readInt( lpBufferPosition );
-	lMotion.lightframesCount = readInt( lpBufferPosition );
+	//lMotion.lightframesCount = readInt( lpBufferPosition );
 	lMotion.sequencesCount = readInt( lpBufferPosition );
 
 	lMotion.sequences = new MotionSequence[ lMotion.sequencesCount ];
@@ -632,17 +632,19 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 	{
 		lMotion.meshes[ i ].name = readString( lpBufferPosition );
 		lMotion.meshes[ i ].visible = readBool( lpBufferPosition );
-		lMotion.meshes[ i ].type = readInt( lpBufferPosition );
+		//lMotion.meshes[ i ].type = readInt( lpBufferPosition );
 		lMotion.meshes[ i ].keyframes = new MotionKeyframe[ lMotion.keyframesCount ];
 		for (int j = 0; j < lMotion.keyframesCount; j++ )
 		{
-			lMotion.meshes[i].keyframes[j].number = readInt( lpBufferPosition );
+			//lMotion.meshes[i].keyframes[j].number = readInt( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].x = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].y = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].z = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].pitch = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].yaw = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].roll = readFloat( lpBufferPosition );
+			readFloat(lpBufferPosition); readFloat(lpBufferPosition); 
+			readFloat(lpBufferPosition); readFloat(lpBufferPosition);
 		}
 		loadMotionMesh( apFileName, lMotion.meshes + i );
 	}
@@ -672,47 +674,40 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	bool lLevel = false;
+	int lLevelsCount = 0 ;//18;	bool lLevel = true;
 
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
     bool lResult = false;
 
-	int lLevelsCount = 1 ;//18;
 	char* lLevels[] = { "ANASTA1" };
                         //"ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
                         //"PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
                         //"KANYON", "WALKIRIE", "OUTRO" };
-	if ( lLevel )
+	for (int i = 0; i < lLevelsCount; i++ )
 	{
-		for (int i = 0; i < lLevelsCount; i++ )
-		{
-			InitializeSdkObjects(lSdkManager, lScene);
-			dustLevel2FBX( lScene, lLevels[i] );
-			char out[256];
-			sprintf( out, "..//..//DustUnity//Assets//Levels//%s.fbx", lLevels[i]);
-			SaveScene( lSdkManager, lScene, out,-1, false);
-			DestroySdkObjects(lSdkManager, lResult);
-		}
+		InitializeSdkObjects(lSdkManager, lScene);
+		dustLevel2FBX( lScene, lLevels[i] );
+		char out[256];
+		sprintf( out, "..//..//DustUnity//Assets//Levels//%s.fbx", lLevels[i]);
+		SaveScene( lSdkManager, lScene, out,-1, false);
+		DestroySdkObjects(lSdkManager, lResult);
 	}
 
-	if ( !lLevel )
-	{
-		int lMotionsCount;
-		char** lMotions = findMotions(lMotionsCount);
+	int lMotionsCount;
+	char** lMotions = findMotions(lMotionsCount);
 		
-		for (int i = 0; i < lMotionsCount; i ++ )
-		{
-			InitializeSdkObjects(lSdkManager, lScene);
-			dustMotion2FBX( lScene, lMotions[ i ] );
-			char out[256];
-			char tmp[256];
-			strcpy( tmp, lMotions[i] );
-			strrchr( tmp, '.')[0] = 0;
-			sprintf( out, "..//..//DustUnity//Assets//Objects//%s.fbx", tmp);
-			SaveScene( lSdkManager, lScene,out, -1, true );
-			DestroySdkObjects(lSdkManager, lResult);
-		}
+	for (int i = 0; i < lMotionsCount; i ++ )
+	{
+		InitializeSdkObjects(lSdkManager, lScene);
+		dustMotion2FBX( lScene, lMotions[ i ] );
+		char out[256];
+		char tmp[256];
+		strcpy( tmp, lMotions[i] );
+		strrchr( tmp, '.')[0] = 0;
+		sprintf( out, "..//..//DustUnity//Assets//Objects//%s.fbx", tmp);
+		SaveScene( lSdkManager, lScene,out, -1, true );
+		DestroySdkObjects(lSdkManager, lResult);
 	}
 	return 0;
 }
