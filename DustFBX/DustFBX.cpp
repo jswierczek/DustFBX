@@ -623,10 +623,6 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 		lMotion.sequences[ i ].keyframesCount = readInt( lpBufferPosition );
 	}
 
-	if ( lMotion.sequencesCount == 1 )
-		if ( lMotion.sequences[0].keyframesCount == 0)
-			lMotion.sequences[0].keyframesCount = lMotion.keyframesCount;
-
 	lMotion.meshes = new MotionMesh[ lMotion.meshesCount ];
 	for ( int i = 0; i < lMotion.meshesCount; i++ )
 	{
@@ -643,8 +639,6 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 			lMotion.meshes[i].keyframes[j].pitch = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].yaw = readFloat( lpBufferPosition );
 			lMotion.meshes[i].keyframes[j].roll = readFloat( lpBufferPosition );
-			readFloat(lpBufferPosition); readFloat(lpBufferPosition); 
-			readFloat(lpBufferPosition); readFloat(lpBufferPosition);
 		}
 		loadMotionMesh( apFileName, lMotion.meshes + i );
 	}
