@@ -132,6 +132,7 @@ struct SectorMesh
 	int texture1FramesCount;	
 	int texture2FramesCount;
 	int transparent;
+	int luminosity;
 	int type;
 	int verticesCount;
 	Vertex* vertices;
@@ -202,6 +203,8 @@ void createSectorNode( FbxScene* apScene, Sector* apSector, FILE* apTagsFile )
 		sprintf( tag, "%s-I%05d,A%02d",lName,apSector->meshes[ m ].id,apSector->meshes[ m ].texture1FramesCount );
 		if ( apSector->meshes[m].transparent)
 			strcat( tag, ",T");
+		if ( apSector->meshes[m].luminosity)
+			strcat( tag, ",L");
 		if ( apSector->meshes[m].texture2FramesCount > 0 )
 		{
 			char tag2[256];
@@ -267,6 +270,7 @@ void dustLevel2FBX( FbxScene* apScene, char* apFileName )
 			lpMeshes[ m ].texture1FramesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].texture2FramesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].transparent = readInt( lpBufferPosition );
+			lpMeshes[ m ].luminosity = readInt( lpBufferPosition );
 			lpMeshes[ m ].type = readInt( lpBufferPosition );
 			lpMeshes[ m ].verticesCount = readInt( lpBufferPosition );
 			lpMeshes[ m ].indicesCount = readInt( lpBufferPosition );
@@ -668,16 +672,17 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int lLevelsCount = 0 ;//18;	bool lLevel = true;
+	int lLevelsCount = 18;	
 
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
     bool lResult = false;
 
-	char* lLevels[] = { "ANASTA1" };
-                        //"ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
-                        //"PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
-                        //"KANYON", "WALKIRIE", "OUTRO" };
+	char* lLevels[] = { //"ANASTA1" };
+                        "ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
+                        "PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
+                        "KANYON", "WALKIRIE", "OUTRO" };
+	
 	for (int i = 0; i < lLevelsCount; i++ )
 	{
 		InitializeSdkObjects(lSdkManager, lScene);
@@ -687,6 +692,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		SaveScene( lSdkManager, lScene, out,-1, false);
 		DestroySdkObjects(lSdkManager, lResult);
 	}
+	return 0;
 
 	int lMotionsCount;
 	char** lMotions = findMotions(lMotionsCount);
