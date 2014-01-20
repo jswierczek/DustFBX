@@ -671,17 +671,16 @@ void dustMotion2FBX( FbxScene* apScene, char* apFileName )
 }
 
 int _tmain(int argc, _TCHAR* argv[])
-{
-	int lLevelsCount = 18;	
-
+{	
     FbxManager* lSdkManager = NULL;
     FbxScene* lScene = NULL;
     bool lResult = false;
 
-	char* lLevels[] = { //"ANASTA1" };
-                        "ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
-                        "PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
-                        "KANYON", "WALKIRIE", "OUTRO" };
+	int lLevelsCount = 2;
+	char* lLevels[] = { "ANASTA1", "PLAT1" };
+                        //"ANASTA1", "ANASTA2", "GOLEB1", "GOLEB2", "GOLEB3", "GOLEB4", "GOLEB5", 
+                        //"PLAT1", "PLAT2", "PLAT3", "PLAT4", "PLAT5", "PLAT6","PLAT7","PLAT8",
+                        //"KANYON", "WALKIRIE", "OUTRO" };
 	
 	for (int i = 0; i < lLevelsCount; i++ )
 	{
@@ -692,7 +691,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		SaveScene( lSdkManager, lScene, out,-1, false);
 		DestroySdkObjects(lSdkManager, lResult);
 	}
+
+	///////////
 	return 0;
+	///////////
 
 	int lMotionsCount;
 	char** lMotions = findMotions(lMotionsCount);
